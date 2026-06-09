@@ -25,6 +25,14 @@ router.get('/dashboard', eventController.getDashboardStats);
 router.get('/earnings', eventController.getEarnings);
 router.get('/registrations', eventController.getRegistrations);
 
+// Financials
+router.get('/settlements', eventController.getOrganizerSettlements);
+router.get('/refunds', eventController.getOrganizerRefunds);
+
+// Exports
+router.get('/export/sales', eventController.exportSalesCsv);
+router.get('/export/settlements', eventController.exportSettlementsCsv);
+
 // Get single event
 router.get('/:id', eventController.getEventById);
 

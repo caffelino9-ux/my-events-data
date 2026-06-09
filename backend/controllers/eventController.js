@@ -1,7 +1,10 @@
 const Event = require('../models/Event');
 const EventDraft = require('../models/EventDraft');
 const Registration = require('../models/Registration');
+const Settlement = require('../models/Settlement');
+const Refund = require('../models/Refund');
 const cloudinary = require('../config/cloudinary');
+const { Parser } = require('json2csv');
 
 // Upload Banner to Cloudinary
 exports.uploadBanner = async (req, res) => {
@@ -207,17 +210,69 @@ exports.getDashboardStats = async (req, res) => {
 exports.getEarnings = async (req, res) => {
   try {
     const organizerId = req.cafe.id || req.cafe._id;
-    const events = await Event.find({ organizerId, ticketType: 'Paid Event' });
     
-    const totalRevenue = events.reduce((acc, ev) => acc + (ev.ticketsSold * ev.ticketPrice), 0);
-    
+    // Auto-sync settlements for this organizer's events
+    const events = await Event.find({ organizerId, ticketsSold: { $gt: 0 } });
+    let totalRevenue = 0;
+    let ticketsSold = 0;
+
+    for (const e of events) {
+      const revenue = (e.ticketsSold || 0) * (e.ticketPrice || 0);
+      totalRevenue += revenue;
+      ticketsSold += e.ticketsSold || 0;
+      
+      const platformFeeAmount = revenue * 0.05;
+      const amountPayable = revenue - platformFeeAmount;
+      
+      await Settlement.findOneAndUpdate(
+        { eventId: e._id },
+        {
+          eventId: e._id,
+          organizerId: e.organizerId,
+          totalRevenue: revenue,
+          platformFeePercentage: 5,
+          platformFeeAmount,
+          amountPayable,
+        },
+        { upsert: true, setDefaultsOnInsert: true }
+      );
+    }
+
+    const settlements = await Settlement.find({ organizerId });
+    const pendingSettlements = settlements.filter(s => s.status === 'Pending' || s.status === 'Processing').reduce((acc, s) => acc + s.amountPayable, 0);
+    const completedSettlements = settlements.filter(s => s.status === 'Paid').reduce((acc, s) => acc + s.amountPayable, 0);
+
     res.status(200).json({ 
       success: true, 
       totalRevenue,
-      pendingSettlements: totalRevenue, // Mocked pending
-      completedSettlements: 0, // Mocked completed
-      ticketsSold: events.reduce((acc, ev) => acc + ev.ticketsSold, 0)
+      pendingSettlements,
+      completedSettlements,
+      ticketsSold
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get Settlements
+exports.getOrganizerSettlements = async (req, res) => {
+  try {
+    const organizerId = req.cafe.id || req.cafe._id;
+    const settlements = await Settlement.find({ organizerId })
+      .populate('eventId', 'eventName eventDate ticketsSold')
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, settlements });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get Refunds
+exports.getOrganizerRefunds = async (req, res) => {
+  try {
+    // const organizerId = req.cafe.id || req.cafe._id;
+    // Refunds might be linked to eventId, we would fetch events first
+    res.status(200).json({ success: true, refunds: [] });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -227,7 +282,6 @@ exports.getEarnings = async (req, res) => {
 exports.getRegistrations = async (req, res) => {
   try {
     const organizerId = req.cafe.id || req.cafe._id;
-    // Fetch all registrations belonging to events managed by this organizer
     const registrations = await Registration.find({ organizerId })
       .populate('eventId', 'eventName bannerUrl')
       .sort({ registrationDate: -1 });
@@ -236,4 +290,48 @@ exports.getRegistrations = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+};
+
+// CSV Exports
+exports.exportSalesCsv = async (req, res) => {
+  try {
+    const organizerId = req.cafe.id || req.cafe._id;
+    const registrations = await Registration.find({ organizerId }).populate('eventId', 'eventName');
+    const data = registrations.map(r => ({
+      Event: r.eventId?.eventName || r.eventName,
+      User: r.userName,
+      Email: r.email,
+      Phone: r.phone,
+      Tickets: r.ticketCount,
+      AmountPaid: r.amountPaid,
+      Status: r.paymentStatus,
+      Date: r.registrationDate
+    }));
+    const parser = new Parser();
+    const csv = parser.parse(data);
+    res.header('Content-Type', 'text/csv');
+    res.attachment('sales.csv');
+    res.send(csv);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+exports.exportSettlementsCsv = async (req, res) => {
+  try {
+    const organizerId = req.cafe.id || req.cafe._id;
+    const settlements = await Settlement.find({ organizerId }).populate('eventId', 'eventName');
+    const data = settlements.map(s => ({
+      Event: s.eventId?.eventName,
+      TotalRevenue: s.totalRevenue,
+      PlatformFee: s.platformFeeAmount,
+      Payable: s.amountPayable,
+      Status: s.status,
+      UTR: s.utrNumber,
+      Date: s.createdAt
+    }));
+    const parser = new Parser();
+    const csv = parser.parse(data);
+    res.header('Content-Type', 'text/csv');
+    res.attachment('settlements.csv');
+    res.send(csv);
+  } catch (err) { res.status(500).json({ message: err.message }); }
 };

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { theme } from '../styles/theme';
+import { theme } from '../../admin-dashboard/styles/theme';
 import axios from 'axios';
 import { API_BASE_URL } from '../../config/api';
-import toast from 'react-hot-toast';
 
 const Container = styled.div`
   max-width: ${theme.componentSizes.containerMaxWidth};
@@ -34,18 +33,6 @@ const Button = styled.button`
   &:hover { background: #E5C354; }
 `;
 
-const ActionButton = styled.button`
-  background: ${theme.colors.coffeeDark};
-  color: ${theme.colors.cream};
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  font-size: 12px;
-  &:hover { background: ${theme.colors.coffeeMedium}; }
-`;
-
 const TableCard = styled.div`
   background: ${theme.colors.white};
   border-radius: 16px;
@@ -74,33 +61,22 @@ const Settlements: React.FC = () => {
   const [settlements, setSettlements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchSettlements = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API_BASE_URL}/admin/settlements`, { headers: { Authorization: `Bearer ${token}` }});
-      setSettlements(res.data);
-    } catch (error) { console.error(error); } finally { setLoading(false); }
-  };
-
-  useEffect(() => { fetchSettlements(); }, []);
+  useEffect(() => {
+    const fetchSettlements = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${API_BASE_URL}/events/settlements`, { headers: { Authorization: `Bearer ${token}` }});
+        if (res.data.success) {
+          setSettlements(res.data.settlements);
+        }
+      } catch (error) { console.error(error); } finally { setLoading(false); }
+    };
+    fetchSettlements();
+  }, []);
 
   const handleExport = () => {
     const token = localStorage.getItem('token');
-    window.open(`${API_BASE_URL}/admin/export/settlements?token=${token}`, '_blank');
-  };
-
-  const handleMarkPaid = async (id: string) => {
-    const utr = prompt("Enter UTR / Reference Number for this payment:");
-    if (!utr) return;
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${API_BASE_URL}/admin/settlement/${id}/status`, 
-        { status: 'Paid', utrNumber: utr }, 
-        { headers: { Authorization: `Bearer ${token}` }}
-      );
-      toast.success("Settlement marked as Paid!");
-      fetchSettlements();
-    } catch (error) { toast.error("Failed to update settlement."); }
+    window.open(`${API_BASE_URL}/events/export/settlements?token=${token}`, '_blank');
   };
 
   if (loading) return <div>Loading settlements...</div>;
@@ -108,7 +84,7 @@ const Settlements: React.FC = () => {
   return (
     <Container>
       <Header>
-        <Title>Settlements Management</Title>
+        <Title>Payout History</Title>
         <Button onClick={handleExport}>Export CSV</Button>
       </Header>
       <TableCard>
@@ -116,12 +92,11 @@ const Settlements: React.FC = () => {
           <thead>
             <tr>
               <th>Event</th>
-              <th>Organizer</th>
-              <th>Revenue</th>
+              <th>Date</th>
+              <th>Total Revenue</th>
               <th>Platform Fee (5%)</th>
-              <th>Payable Amount</th>
+              <th>Amount Paid</th>
               <th>Status</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -131,10 +106,7 @@ const Settlements: React.FC = () => {
                   <div style={{ fontWeight: 600 }}>{s.eventId?.eventName}</div>
                   <div style={{ fontSize: '12px', color: theme.colors.gray600 }}>{s.eventId?.ticketsSold} Tickets Sold</div>
                 </td>
-                <td>
-                  <div>{s.organizerId?.name}</div>
-                  <div style={{ fontSize: '12px', color: theme.colors.gray600 }}>{s.organizerId?.Phonenumber}</div>
-                </td>
+                <td>{new Date(s.createdAt).toLocaleDateString()}</td>
                 <td>₹{s.totalRevenue}</td>
                 <td style={{ color: theme.colors.warning }}>-₹{s.platformFeeAmount}</td>
                 <td style={{ fontWeight: 'bold', color: theme.colors.success }}>₹{s.amountPayable}</td>
@@ -142,14 +114,9 @@ const Settlements: React.FC = () => {
                   <StatusBadge status={s.status}>{s.status}</StatusBadge>
                   {s.utrNumber && <div style={{ fontSize: '11px', marginTop: '4px' }}>UTR: {s.utrNumber}</div>}
                 </td>
-                <td>
-                  {s.status !== 'Paid' && (
-                    <ActionButton onClick={() => handleMarkPaid(s._id)}>Mark Paid</ActionButton>
-                  )}
-                </td>
               </tr>
             ))}
-            {settlements.length === 0 && <tr><td colSpan={7}>No settlements found.</td></tr>}
+            {settlements.length === 0 && <tr><td colSpan={6}>No payouts found.</td></tr>}
           </tbody>
         </Table>
       </TableCard>

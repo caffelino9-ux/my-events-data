@@ -14,6 +14,8 @@ import {
   Cafes,
   Users,
   Settings,
+  Payments,
+  Settlements
 } from './pages';
 
 interface AdminRoutesProps {
@@ -34,6 +36,8 @@ const AdminRoutes: React.FC<AdminRoutesProps> = ({ isAuthenticated }) => {
         <Route path="/organizers" element={<Organizers />} />
         <Route path="/verification" element={<BankVerification />} />
         <Route path="/registrations" element={<Registrations />} />
+        <Route path="/payments" element={<Payments />} />
+        <Route path="/settlements" element={<Settlements />} />
         <Route path="/tickets" element={<Tickets />} />
         <Route path="/revenue" element={<Revenue />} />
         <Route path="/analytics" element={<Analytics />} />

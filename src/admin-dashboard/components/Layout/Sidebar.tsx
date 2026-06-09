@@ -198,6 +198,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       </NavSection>
 
       <NavSection>
+        <SectionTitle>Financials</SectionTitle>
+        <NavList>
+          <NavItem to="/admin/payments" isActive={isActive('/admin/payments')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="2" y="5" width="20" height="14" rx="2" strokeWidth="2" />
+              <line x1="2" y1="10" x2="22" y2="10" strokeWidth="2" />
+            </svg>
+            <NavLabel>Payments</NavLabel>
+          </NavItem>
+          <NavItem to="/admin/settlements" isActive={isActive('/admin/settlements')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" strokeWidth="2" />
+            </svg>
+            <NavLabel>Settlements</NavLabel>
+          </NavItem>
+        </NavList>
+      </NavSection>
+
+      <NavSection>
         <SectionTitle>Operations</SectionTitle>
         <NavList>
           <NavItem to="/admin/revenue" isActive={isActive('/admin/revenue')}>
