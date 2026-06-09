@@ -117,8 +117,11 @@ const Settlements: React.FC = () => {
             <tr>
               <th>Event</th>
               <th>Organizer</th>
+              <th>Tickets Sold</th>
+              <th>Paid Users</th>
+              <th>Free Users</th>
               <th>Revenue</th>
-              <th>Platform Fee (5%)</th>
+              <th>Platform Fee</th>
               <th>Payable Amount</th>
               <th>Status</th>
               <th>Actions</th>
@@ -127,14 +130,14 @@ const Settlements: React.FC = () => {
           <tbody>
             {settlements.map(s => (
               <tr key={s._id}>
-                <td>
-                  <div style={{ fontWeight: 600 }}>{s.eventId?.eventName}</div>
-                  <div style={{ fontSize: '12px', color: theme.colors.gray600 }}>{s.eventId?.ticketsSold} Tickets Sold</div>
-                </td>
+                <td style={{ fontWeight: 600 }}>{s.eventId?.eventName}</td>
                 <td>
                   <div>{s.organizerId?.name}</div>
                   <div style={{ fontSize: '12px', color: theme.colors.gray600 }}>{s.organizerId?.Phonenumber}</div>
                 </td>
+                <td>{s.ticketsSold}</td>
+                <td style={{ color: theme.colors.success, fontWeight: 600 }}>{s.paidUsers}</td>
+                <td style={{ color: theme.colors.gray600 }}>{s.freeUsers}</td>
                 <td>₹{s.totalRevenue}</td>
                 <td style={{ color: theme.colors.warning }}>-₹{s.platformFeeAmount}</td>
                 <td style={{ fontWeight: 'bold', color: theme.colors.success }}>₹{s.amountPayable}</td>
@@ -149,7 +152,7 @@ const Settlements: React.FC = () => {
                 </td>
               </tr>
             ))}
-            {settlements.length === 0 && <tr><td colSpan={7}>No settlements found.</td></tr>}
+            {settlements.length === 0 && <tr><td colSpan={10}>No settlements found.</td></tr>}
           </tbody>
         </Table>
       </TableCard>

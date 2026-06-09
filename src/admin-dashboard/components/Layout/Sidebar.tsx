@@ -200,6 +200,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       <NavSection>
         <SectionTitle>Financials</SectionTitle>
         <NavList>
+          <NavItem to="/admin/event-revenue" isActive={isActive('/admin/event-revenue')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
+              <line x1="3" y1="9" x2="21" y2="9" strokeWidth="2" />
+              <line x1="9" y1="21" x2="9" y2="9" strokeWidth="2" />
+            </svg>
+            <NavLabel>Event Revenue</NavLabel>
+          </NavItem>
           <NavItem to="/admin/payments" isActive={isActive('/admin/payments')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <rect x="2" y="5" width="20" height="14" rx="2" strokeWidth="2" />

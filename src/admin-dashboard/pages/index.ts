@@ -13,3 +13,4 @@ export { default as Users } from './Users';
 export { default as Settings } from './Settings';
 export { default as Payments } from './Payments';
 export { default as Settlements } from './Settlements';
+export { default as EventRevenue } from './EventRevenue';

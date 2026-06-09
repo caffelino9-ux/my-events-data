@@ -5,6 +5,9 @@ const settlementSchema = new mongoose.Schema(
     eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
     organizerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     totalRevenue: { type: Number, required: true }, // Total ticket sales revenue
+    ticketsSold: { type: Number, default: 0 },
+    paidUsers: { type: Number, default: 0 },
+    freeUsers: { type: Number, default: 0 },
     platformFeePercentage: { type: Number, required: true, default: 5 }, // Platform takes 5%
     platformFeeAmount: { type: Number, required: true },
     amountPayable: { type: Number, required: true }, // Revenue - Platform Fee

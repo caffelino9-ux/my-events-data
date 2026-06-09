@@ -78,18 +78,10 @@ const Dashboard: React.FC = () => {
       
       <Grid>
         <StatCard><h3>Total Events</h3><div className="value">{stats?.totalEvents || 0}</div></StatCard>
-        <StatCard><h3>Published Events</h3><div className="value">{stats?.publishedEvents || 0}</div></StatCard>
-        <StatCard warning><h3>Pending Review Events</h3><div className="value">{stats?.pendingReviewEvents || 0}</div></StatCard>
-        <StatCard><h3>Cancelled Events</h3><div className="value" style={{ color: '#FF6B6B' }}>{stats?.cancelledEvents || 0}</div></StatCard>
-        
-        <StatCard><h3>Total Organizers</h3><div className="value">{stats?.totalOrganizers || 0}</div></StatCard>
-        <StatCard><h3>Total Users</h3><div className="value">{stats?.totalUsers || 0}</div></StatCard>
-        <StatCard><h3>Total Registrations</h3><div className="value">{stats?.totalRegistrations || 0}</div></StatCard>
-        
         <StatCard><h3>Total Tickets Sold</h3><div className="value">{stats?.totalTicketsSold || 0}</div></StatCard>
         <StatCard success><h3>Total Revenue</h3><div className="value">₹{stats?.totalRevenue?.toLocaleString() || 0}</div></StatCard>
-        <StatCard success><h3>Today's Revenue</h3><div className="value">₹{stats?.todaysRevenue?.toLocaleString() || 0}</div></StatCard>
-        <StatCard success><h3>This Month Revenue</h3><div className="value">₹{stats?.thisMonthRevenue?.toLocaleString() || 0}</div></StatCard>
+        <StatCard warning><h3>Pending Settlements</h3><div className="value">₹{stats?.pendingSettlements?.toLocaleString() || 0}</div></StatCard>
+        <StatCard success><h3>Completed Settlements</h3><div className="value">₹{stats?.completedSettlements?.toLocaleString() || 0}</div></StatCard>
       </Grid>
 
       <h2 style={{ color: theme.colors.coffeeDark, marginBottom: '16px', marginTop: '32px' }}>Recent Payment Settlements</h2>

@@ -81,8 +81,11 @@ const EventDetails: React.FC = () => {
   if (loading) return <div>Loading full event details...</div>;
   if (!data || !data.event) return <div>Event not found</div>;
 
-  const { event, organizer, registrations } = data;
-  const revenue = (event.ticketsSold || 0) * (event.ticketPrice || 0);
+  const { event, organizer, registrations, payments = [] } = data;
+  const revenue = registrations.reduce((sum: number, r: any) => sum + (r.amountPaid || 0), 0);
+  const platformFee = revenue * 0.05;
+  const organizerAmount = revenue - platformFee;
+  const ticketsSold = registrations.reduce((sum: number, r: any) => sum + (r.ticketCount || 1), 0);
 
   return (
     <Container>
@@ -127,14 +130,53 @@ const EventDetails: React.FC = () => {
       </Section>
 
       <Section>
-        <Title>Ticket Details</Title>
+        <Title>Financial Breakdown</Title>
+        <Grid>
+          <div><Label>Event Name</Label><Value>{event.eventName}</Value></div>
+          <div><Label>Total Tickets Sold</Label><Value>{ticketsSold}</Value></div>
+          <div><Label>Total Revenue</Label><Value style={{ color: theme.colors.success, fontWeight: 'bold' }}>₹{revenue.toLocaleString()}</Value></div>
+          <div><Label>Platform Fee (5%)</Label><Value style={{ color: theme.colors.warning }}>₹{platformFee.toLocaleString()}</Value></div>
+          <div><Label>Organizer Amount</Label><Value style={{ color: theme.colors.gold, fontWeight: 'bold' }}>₹{organizerAmount.toLocaleString()}</Value></div>
+        </Grid>
+      </Section>
+
+      <Section>
+        <Title>Payment History Per Event</Title>
+        {payments.length === 0 ? <p>No paid transactions found.</p> : (
+          <div style={{ overflowX: 'auto' }}>
+            <Table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Amount</th>
+                  <th>Payment ID</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((p: any) => (
+                  <tr key={p._id}>
+                    <td style={{ fontWeight: 500 }}>{p.userId?.name || 'Guest'}</td>
+                    <td>{p.userId?.email || 'N/A'}</td>
+                    <td style={{ fontWeight: 'bold', color: theme.colors.success }}>₹{p.amount}</td>
+                    <td style={{ fontFamily: 'monospace' }}>{p.transactionId}</td>
+                    <td>{new Date(p.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        )}
+      </Section>
+
+      <Section>
+        <Title>Ticket Configuration</Title>
         <Grid>
           <div><Label>Ticket Type</Label><Value>{event.ticketType}</Value></div>
           <div><Label>Ticket Price</Label><Value>₹{event.ticketPrice}</Value></div>
           <div><Label>Maximum Seats</Label><Value>{event.maxSeats}</Value></div>
           <div><Label>Available Seats</Label><Value>{event.availableSeats}</Value></div>
-          <div><Label>Tickets Sold</Label><Value>{event.ticketsSold}</Value></div>
-          <div><Label>Total Revenue Generated</Label><Value style={{ color: theme.colors.success, fontWeight: 'bold' }}>₹{revenue.toLocaleString()}</Value></div>
         </Grid>
       </Section>
 

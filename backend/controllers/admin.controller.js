@@ -60,7 +60,14 @@ const getPlatformStats = async (req, res) => {
       }
     });
 
-    const pendingSettlements = totalRevenue * 0.9;
+    // Real pending/completed settlements
+    const allSettlements = await Settlement.find();
+    let pendingSettlements = 0;
+    let completedSettlements = 0;
+    allSettlements.forEach(s => {
+      if (s.status === 'Paid') completedSettlements += (s.amountPayable || 0);
+      else pendingSettlements += (s.amountPayable || 0);
+    });
 
     res.json({
       totalOrganizers,
@@ -79,7 +86,8 @@ const getPlatformStats = async (req, res) => {
       totalRevenue,
       todaysRevenue,
       thisMonthRevenue,
-      pendingSettlements
+      pendingSettlements,
+      completedSettlements
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -114,12 +122,14 @@ const getEventById = async (req, res) => {
 
     const organizer = await Cafe.findById(event.organizerId);
     const registrations = await Registration.find({ eventId: event._id });
+    const payments = await Payment.find({ eventId: event._id }).populate('userId', 'name email');
     
     res.json({
       event: event.toObject(),
       bankDetails: decodedBankDetails,
       organizer,
-      registrations
+      registrations,
+      payments
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -232,24 +242,45 @@ const getPendingCafes = async (req, res) => {
 const getSettlements = async (req, res) => {
   try {
     // Auto-sync settlements for events with sales
-    const events = await Event.find({ ticketsSold: { $gt: 0 } });
+    const events = await Event.find();
     for (const e of events) {
-      const revenue = (e.ticketsSold || 0) * (e.ticketPrice || 0);
-      const platformFeeAmount = revenue * 0.05; // 5% fee
-      const amountPayable = revenue - platformFeeAmount;
-      
-      await Settlement.findOneAndUpdate(
-        { eventId: e._id },
-        {
-          eventId: e._id,
-          organizerId: e.organizerId,
-          totalRevenue: revenue,
-          platformFeePercentage: 5,
-          platformFeeAmount,
-          amountPayable,
-        },
-        { upsert: true, setDefaultsOnInsert: true }
-      );
+      // Get registrations to accurately count free vs paid
+      const regs = await Registration.find({ eventId: e._id });
+      let paidUsers = 0;
+      let freeUsers = 0;
+      let totalRevenue = 0;
+      let ticketsSold = 0;
+
+      regs.forEach(r => {
+        ticketsSold += (r.ticketCount || 1);
+        if (r.amountPaid > 0) {
+          paidUsers += 1;
+          totalRevenue += r.amountPaid;
+        } else {
+          freeUsers += 1;
+        }
+      });
+
+      if (ticketsSold > 0) {
+        const platformFeeAmount = totalRevenue * 0.05; // 5% fee
+        const amountPayable = totalRevenue - platformFeeAmount;
+        
+        await Settlement.findOneAndUpdate(
+          { eventId: e._id },
+          {
+            eventId: e._id,
+            organizerId: e.organizerId,
+            totalRevenue,
+            ticketsSold,
+            paidUsers,
+            freeUsers,
+            platformFeePercentage: 5,
+            platformFeeAmount,
+            amountPayable,
+          },
+          { upsert: true, setDefaultsOnInsert: true }
+        );
+      }
     }
 
     const settlements = await Settlement.find()
