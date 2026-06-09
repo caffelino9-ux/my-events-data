@@ -29,6 +29,7 @@ const Table = styled.table`
 const Organizers: React.FC = () => {
   const [organizers, setOrganizers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrganizers = async () => {
@@ -38,9 +39,19 @@ const Organizers: React.FC = () => {
           withCredentials: true,
           headers: { Authorization: `Bearer ${token}` }
         });
-        setOrganizers(res.data);
-      } catch (error) {
-        console.error(error);
+        
+        console.log("Admin Organizers Response:", res.data); // Log for debugging
+        
+        if (Array.isArray(res.data)) {
+            setOrganizers(res.data);
+        } else {
+            // Handle if the backend wrapped it in { success: true, organizers: [...] } or threw an error message
+            setOrganizers(res.data.organizers || []);
+            if (res.data.message) setError(res.data.message);
+        }
+      } catch (error: any) {
+        console.error("Failed to fetch organizers:", error);
+        setError(error.message || "Network Error");
       } finally {
         setLoading(false);
       }
@@ -49,6 +60,7 @@ const Organizers: React.FC = () => {
   }, []);
 
   if (loading) return <div>Loading organizers data...</div>;
+  if (error) return <div style={{ color: 'red', padding: '20px' }}>Error loading organizers: {error}</div>;
 
   return (
     <Container>
