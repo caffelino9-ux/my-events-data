@@ -251,6 +251,7 @@ const Events: React.FC = () => {
                 <th>Event Name</th>
                 <th>Category</th>
                 <th>Organizer Name</th>
+                <th>Club/Company</th>
                 <th>Org Email</th>
                 <th>Org Phone</th>
                 <th>Instagram</th>
@@ -281,6 +282,7 @@ const Events: React.FC = () => {
                     <td style={{ fontWeight: '600' }}>{e.eventName}</td>
                     <td>{e.eventCategory}</td>
                     <td>{e.organizerName}</td>
+                    <td>{e.clubCompanyName || 'N/A'}</td>
                     <td>{e.organizerEmail}</td>
                     <td>{e.phoneNumber}</td>
                     <td>{e.eventInstagramId || 'N/A'}</td>
@@ -333,7 +335,7 @@ const Events: React.FC = () => {
                 <p><span className="label">Cafe Name:</span> {drawerData.event.cafeName}</p>
                 <p><span className="label">Venue:</span> {drawerData.event.venueName}</p>
                 <p><span className="label">Address:</span> {drawerData.event.address}, {drawerData.event.city}, {drawerData.event.state}, {drawerData.event.country} - {drawerData.event.pincode}</p>
-                <p><span className="label">Maps:</span> <a href={drawerData.event.googleMapsLink} target="_blank" rel="noreferrer">Open Link</a></p>
+                {drawerData.event.googleMapsLink && <p><span className="label">Maps:</span> <a href={drawerData.event.googleMapsLink} target="_blank" rel="noreferrer" style={{ color: theme.colors.gold }}>Open Link</a></p>}
 
                 <h3>Date & Time</h3>
                 <p><span className="label">Date:</span> {new Date(drawerData.event.eventDate).toLocaleDateString()}</p>
@@ -342,9 +344,12 @@ const Events: React.FC = () => {
                 <h3>Tickets</h3>
                 <p><span className="label">Price:</span> ₹{drawerData.event.ticketPrice}</p>
                 <p><span className="label">Seats:</span> {drawerData.event.ticketsSold} Sold / {drawerData.event.maxSeats} Total</p>
+                <p><span className="label">Remaining:</span> {drawerData.event.maxSeats - drawerData.event.ticketsSold}</p>
 
-                <h3>Organizer</h3>
+                <h3>Hosted By</h3>
                 <p><span className="label">Name:</span> {drawerData.event.organizerName}</p>
+                <p><span className="label">Club/Company:</span> {drawerData.event.clubCompanyName || 'N/A'}</p>
+                <p><span className="label">Instagram:</span> {drawerData.event.eventInstagramId || 'N/A'}</p>
                 <p><span className="label">Email:</span> {drawerData.event.organizerEmail}</p>
                 <p><span className="label">Phone:</span> {drawerData.event.phoneNumber}</p>
 

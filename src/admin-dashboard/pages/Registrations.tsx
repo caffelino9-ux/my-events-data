@@ -67,6 +67,7 @@ const Registrations: React.FC = () => {
                 <th>Ticket Number</th>
                 <th>Amount Paid</th>
                 <th>Status</th>
+                <th>Check-In</th>
                 <th>Registration Date</th>
               </tr>
             </thead>
@@ -81,6 +82,11 @@ const Registrations: React.FC = () => {
                   <td style={{ color: theme.colors.success, fontWeight: 'bold' }}>₹{r.amountPaid}</td>
                   <td style={{ textTransform: 'uppercase', fontWeight: 600, color: r.paymentStatus === 'Completed' ? theme.colors.success : theme.colors.warning }}>
                     {r.paymentStatus}
+                  </td>
+                  <td>
+                    <span style={{ padding: '4px 8px', borderRadius: '4px', background: r.checkInStatus ? theme.colors.success : theme.colors.gray200, color: r.checkInStatus ? 'white' : theme.colors.gray800 }}>
+                      {r.checkInStatus ? 'Checked In' : 'Pending'}
+                    </span>
                   </td>
                   <td>{new Date(r.registrationDate).toLocaleString()}</td>
                 </tr>

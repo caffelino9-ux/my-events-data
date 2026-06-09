@@ -54,21 +54,36 @@ const EventDetails: React.FC = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         <div>
+          <h3>Event Status & Category</h3>
+          <p><strong>Status:</strong> <span style={{ textTransform: 'uppercase', color: event.status === 'published' ? theme.colors.success : theme.colors.gray600 }}>{event.status}</span></p>
+          <p><strong>Category:</strong> {event.eventCategory}</p>
+        </div>
+        <div>
+          <h3>Hosted By</h3>
+          <p><strong>Name:</strong> {event.organizerName}</p>
+          <p><strong>Club/Company:</strong> {event.clubCompanyName || 'N/A'}</p>
+          <p><strong>Instagram:</strong> {event.eventInstagramId || 'N/A'}</p>
+          <p><strong>Contact:</strong> {event.organizerEmail} | {event.phoneNumber}</p>
+        </div>
+        <div>
           <h3>Date & Time</h3>
           <p>{new Date(event.eventDate).toLocaleDateString()} | {event.startTime} - {event.endTime}</p>
         </div>
         <div>
           <h3>Location</h3>
-          <p>{event.venueName}, {event.address}</p>
+          <p>{event.cafeName ? `${event.cafeName} - ` : ''}{event.venueName}</p>
+          <p>{event.address}, {event.city}, {event.state}, {event.country} - {event.pincode}</p>
+          {event.googleMapsLink && <p><a href={event.googleMapsLink} target="_blank" rel="noreferrer" style={{ color: theme.colors.gold }}>Google Maps Link</a></p>}
         </div>
         <div>
           <h3>Tickets</h3>
           <p>{event.ticketType} - ₹{event.ticketPrice}</p>
-          <p>Capacity: {event.maxSeats}</p>
+          <p>Total Capacity: {event.maxSeats}</p>
         </div>
         <div>
           <h3>Performance</h3>
-          <p style={{ color: theme.colors.success, fontWeight: 'bold' }}>Sold: {event.ticketsSold}</p>
+          <p style={{ color: theme.colors.success, fontWeight: 'bold' }}>Registered Count (Sold): {event.ticketsSold}</p>
+          <p style={{ color: '#FF6B6B', fontWeight: 'bold' }}>Remaining Seats: {event.maxSeats - event.ticketsSold}</p>
           <p style={{ color: theme.colors.success, fontWeight: 'bold' }}>Revenue: ₹{event.ticketsSold * event.ticketPrice}</p>
         </div>
         <div style={{ gridColumn: '1 / -1', marginTop: '16px', padding: '16px', background: theme.colors.gray100, borderRadius: '8px' }}>

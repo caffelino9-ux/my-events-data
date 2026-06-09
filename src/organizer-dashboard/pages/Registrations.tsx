@@ -36,7 +36,7 @@ const Registrations: React.FC = () => {
           withCredentials: true,
           headers: { Authorization: `Bearer ${token}` }
         });
-        setRegistrations(res.data);
+        setRegistrations(res.data.registrations);
       } catch (error) {
         console.error(error);
       } finally {
@@ -57,9 +57,11 @@ const Registrations: React.FC = () => {
             <tr>
               <th>Attendee</th>
               <th>Event</th>
+              <th>Ticket #</th>
               <th>Tickets</th>
               <th>Amount</th>
               <th>Status</th>
+              <th>Check-In</th>
               <th>Date</th>
             </tr>
           </thead>
@@ -71,11 +73,17 @@ const Registrations: React.FC = () => {
                   <div style={{ fontSize: '12px', color: theme.colors.gray600 }}>{r.email}</div>
                 </td>
                 <td>{r.eventId?.eventName || 'Deleted Event'}</td>
+                <td style={{ fontFamily: 'monospace' }}>{r.ticketNumber}</td>
                 <td>{r.ticketCount}</td>
                 <td style={{ fontWeight: 'bold' }}>₹{r.amountPaid}</td>
                 <td>
                   <span style={{ color: r.paymentStatus === 'Completed' ? theme.colors.success : theme.colors.warning }}>
                     {r.paymentStatus}
+                  </span>
+                </td>
+                <td>
+                  <span style={{ padding: '4px 8px', borderRadius: '4px', background: r.checkInStatus ? theme.colors.success : theme.colors.gray200, color: r.checkInStatus ? 'white' : theme.colors.gray800 }}>
+                    {r.checkInStatus ? 'Checked In' : 'Pending'}
                   </span>
                 </td>
                 <td>{new Date(r.registrationDate).toLocaleDateString()}</td>
