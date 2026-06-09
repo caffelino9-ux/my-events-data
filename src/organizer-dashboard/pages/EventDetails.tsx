@@ -88,14 +88,26 @@ const EventDetails: React.FC = () => {
         </div>
         <div style={{ gridColumn: '1 / -1', marginTop: '16px', padding: '16px', background: theme.colors.gray100, borderRadius: '8px' }}>
           <h3>Bank Details (For Settlements)</h3>
-          {event.bankDetails ? (
+          {(event.upiId || event.bankDetails?.upiId || event.accountHolderName || event.bankDetails?.accountHolderName || event.bankName || event.bankDetails?.bankName) ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
-              <p><span style={{ fontWeight: 'bold' }}>Account Holder:</span> {event.bankDetails.accountHolderName || event.bankDetails.accountHolder || 'N/A'}</p>
-              <p><span style={{ fontWeight: 'bold' }}>Bank Name:</span> {event.bankDetails.bankName || 'N/A'}</p>
-              <p><span style={{ fontWeight: 'bold' }}>Account Number:</span> {event.bankDetails.accountNumber || 'N/A'}</p>
-              <p><span style={{ fontWeight: 'bold' }}>IFSC Code:</span> {event.bankDetails.ifscCode || event.bankDetails.ifsc || 'N/A'}</p>
-              <p><span style={{ fontWeight: 'bold' }}>UPI ID:</span> {event.bankDetails.upiId || event.bankDetails.upi || 'N/A'}</p>
-              <p><span style={{ fontWeight: 'bold' }}>Payment Mobile:</span> {event.bankDetails.paymentMobileNumber || event.bankDetails.phoneNumber || 'N/A'}</p>
+              {(event.accountHolderName || event.bankDetails?.accountHolderName) && (
+                <p><span style={{ fontWeight: 'bold' }}>Account Holder:</span> {event.accountHolderName || event.bankDetails?.accountHolderName || event.bankDetails?.accountHolder || 'N/A'}</p>
+              )}
+              {(event.bankName || event.bankDetails?.bankName) && (
+                <p><span style={{ fontWeight: 'bold' }}>Bank Name:</span> {event.bankName || event.bankDetails?.bankName || 'N/A'}</p>
+              )}
+              {(event.accountNumber || event.bankDetails?.accountNumber) && (
+                <p><span style={{ fontWeight: 'bold' }}>Account Number:</span> {event.accountNumber || event.bankDetails?.accountNumber || 'N/A'}</p>
+              )}
+              {(event.ifscCode || event.bankDetails?.ifscCode) && (
+                <p><span style={{ fontWeight: 'bold' }}>IFSC Code:</span> {event.ifscCode || event.bankDetails?.ifscCode || event.bankDetails?.ifsc || 'N/A'}</p>
+              )}
+              {(event.upiId || event.bankDetails?.upiId) && (
+                <p><span style={{ fontWeight: 'bold' }}>UPI ID:</span> {event.upiId || event.bankDetails?.upiId || event.bankDetails?.upi || 'N/A'}</p>
+              )}
+              {(event.paymentMobileNumber || event.bankDetails?.paymentMobileNumber) && (
+                <p><span style={{ fontWeight: 'bold' }}>Payment Mobile:</span> {event.paymentMobileNumber || event.bankDetails?.paymentMobileNumber || event.bankDetails?.phoneNumber || 'N/A'}</p>
+              )}
             </div>
           ) : (
             <p style={{ color: theme.colors.gray600, marginTop: '12px' }}>No bank details provided for this event.</p>

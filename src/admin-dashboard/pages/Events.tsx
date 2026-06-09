@@ -354,13 +354,26 @@ const Events: React.FC = () => {
                 <p><span className="label">Phone:</span> {drawerData.event.phoneNumber}</p>
 
                 <h3>Settlement Details</h3>
-                {drawerData.bankDetails ? (
+                {(drawerData.event.upiId || drawerData.bankDetails?.upiId || drawerData.event.accountHolderName || drawerData.bankDetails?.accountHolderName || drawerData.event.bankName || drawerData.bankDetails?.bankName) ? (
                   <>
-                    <p><span className="label">Account Holder:</span> {drawerData.bankDetails.accountHolderName || drawerData.bankDetails.accountHolder || 'N/A'}</p>
-                    <p><span className="label">Bank Name:</span> {drawerData.bankDetails.bankName || 'N/A'}</p>
-                    <p><span className="label">Account Number:</span> {drawerData.bankDetails.accountNumber || 'N/A'}</p>
-                    <p><span className="label">IFSC Code:</span> {drawerData.bankDetails.ifscCode || drawerData.bankDetails.ifsc || 'N/A'}</p>
-                    <p><span className="label">UPI ID:</span> {drawerData.bankDetails.upiId || drawerData.bankDetails.upi || 'N/A'}</p>
+                    {(drawerData.event.upiId || drawerData.bankDetails?.upiId) && (
+                      <p><span className="label">UPI ID:</span> {drawerData.event.upiId || drawerData.bankDetails?.upiId}</p>
+                    )}
+                    {(drawerData.event.accountHolderName || drawerData.bankDetails?.accountHolderName) && (
+                      <p><span className="label">Account Holder Name:</span> {drawerData.event.accountHolderName || drawerData.bankDetails?.accountHolderName || 'N/A'}</p>
+                    )}
+                    {(drawerData.event.bankName || drawerData.bankDetails?.bankName) && (
+                      <p><span className="label">Bank Name:</span> {drawerData.event.bankName || drawerData.bankDetails?.bankName || 'N/A'}</p>
+                    )}
+                    {(drawerData.event.accountNumber || drawerData.bankDetails?.accountNumber) && (
+                      <p><span className="label">Account Number:</span> {drawerData.event.accountNumber || drawerData.bankDetails?.accountNumber || 'N/A'}</p>
+                    )}
+                    {(drawerData.event.ifscCode || drawerData.bankDetails?.ifscCode) && (
+                      <p><span className="label">IFSC Code:</span> {drawerData.event.ifscCode || drawerData.bankDetails?.ifscCode || 'N/A'}</p>
+                    )}
+                    {(drawerData.event.paymentMobileNumber || drawerData.bankDetails?.paymentMobileNumber) && (
+                      <p><span className="label">Payment Mobile Number:</span> {drawerData.event.paymentMobileNumber || drawerData.bankDetails?.paymentMobileNumber || 'N/A'}</p>
+                    )}
                   </>
                 ) : (
                   <p><span className="label">Bank Info:</span> Not provided or Invalid</p>

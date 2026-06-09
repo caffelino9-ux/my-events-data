@@ -149,15 +149,30 @@ const EventDetails: React.FC = () => {
       </Section>
 
       <Section>
-        <Title>Bank Details (Confidential)</Title>
+        <Title>Settlement Details</Title>
         <Grid>
-          <div><Label>Account Holder Name</Label><Value>{event.bankDetailsEncrypted ? 'Available (Encrypted)' : 'Not Provided'}</Value></div>
-          <div><Label>Bank Name</Label><Value>***</Value></div>
-          <div><Label>Account Number</Label><Value>***</Value></div>
-          <div><Label>IFSC Code</Label><Value>***</Value></div>
-          <div><Label>UPI ID</Label><Value>***</Value></div>
+          {(event.upiId || event.bankDetails?.upiId) && (
+            <div><Label>UPI ID</Label><Value>{event.upiId || event.bankDetails?.upiId}</Value></div>
+          )}
+          {(event.accountHolderName || event.bankDetails?.accountHolderName) && (
+            <div><Label>Account Holder Name</Label><Value>{event.accountHolderName || event.bankDetails?.accountHolderName}</Value></div>
+          )}
+          {(event.bankName || event.bankDetails?.bankName) && (
+            <div><Label>Bank Name</Label><Value>{event.bankName || event.bankDetails?.bankName}</Value></div>
+          )}
+          {(event.accountNumber || event.bankDetails?.accountNumber) && (
+            <div><Label>Account Number</Label><Value>{event.accountNumber || event.bankDetails?.accountNumber}</Value></div>
+          )}
+          {(event.ifscCode || event.bankDetails?.ifscCode) && (
+            <div><Label>IFSC Code</Label><Value>{event.ifscCode || event.bankDetails?.ifscCode}</Value></div>
+          )}
+          {(event.paymentMobileNumber || event.bankDetails?.paymentMobileNumber) && (
+            <div><Label>Payment Mobile Number</Label><Value>{event.paymentMobileNumber || event.bankDetails?.paymentMobileNumber}</Value></div>
+          )}
+          {!(event.upiId || event.bankDetails?.upiId || event.accountHolderName || event.bankDetails?.accountHolderName || event.bankName || event.bankDetails?.bankName || event.accountNumber || event.bankDetails?.accountNumber || event.ifscCode || event.bankDetails?.ifscCode || event.paymentMobileNumber || event.bankDetails?.paymentMobileNumber) && (
+            <div style={{ gridColumn: 'span 2' }}><p style={{ color: theme.colors.warning }}>Bank Info: Not provided or Invalid</p></div>
+          )}
         </Grid>
-        <p style={{ fontSize: '12px', color: theme.colors.warning, marginTop: '16px' }}>Note: Real bank decryption requires secondary secure gateway which is masked here for security.</p>
       </Section>
 
       <Section>
