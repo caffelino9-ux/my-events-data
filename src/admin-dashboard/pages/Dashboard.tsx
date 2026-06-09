@@ -42,6 +42,7 @@ const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [settlements, setSettlements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,8 +54,9 @@ const Dashboard: React.FC = () => {
         ]);
         setStats(statsRes.data);
         setSettlements(settlementsRes.data);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to load dashboard data', error);
+        setError(error.message || "Network Error");
       } finally {
         setLoading(false);
       }
@@ -63,6 +65,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   if (loading) return <div>Loading platform overview...</div>;
+  if (error) return <div style={{ color: 'red', padding: '20px' }}>Error loading dashboard: {error}. Are you sure your backend is deployed and VITE_API_URL is set?</div>;
 
   return (
     <Container>
