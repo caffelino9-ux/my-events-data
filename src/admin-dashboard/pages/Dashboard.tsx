@@ -52,8 +52,13 @@ const Dashboard: React.FC = () => {
           axios.get(`${API_BASE_URL}/admin/dashboard-stats`, { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`${API_BASE_URL}/admin/settlements`, { headers: { Authorization: `Bearer ${token}` } })
         ]);
+        
+        if (typeof statsRes.data === 'string' || typeof settlementsRes.data === 'string') {
+          throw new Error("Received HTML/String instead of JSON! Is your VITE_API_URL pointing to the frontend instead of the backend API?");
+        }
+        
         setStats(statsRes.data);
-        setSettlements(settlementsRes.data);
+        setSettlements(Array.isArray(settlementsRes.data) ? settlementsRes.data : []);
       } catch (error: any) {
         console.error('Failed to load dashboard data', error);
         setError(error.message || "Network Error");
