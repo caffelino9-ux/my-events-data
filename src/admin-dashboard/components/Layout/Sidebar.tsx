@@ -261,12 +261,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
             </svg>
             <NavLabel>Verification</NavLabel>
           </NavItem>
-          <NavItem to="/admin/cafes" isActive={isActive('/admin/cafes')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M9 3L5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7l-4-4z" strokeWidth="2" />
-            </svg>
-            <NavLabel>Cafes</NavLabel>
-          </NavItem>
           <NavItem to="/admin/users" isActive={isActive('/admin/users')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" strokeWidth="2" />

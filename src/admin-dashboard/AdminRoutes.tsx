@@ -11,7 +11,6 @@ import {
   Tickets,
   Revenue,
   Analytics,
-  Cafes,
   Users,
   Settings,
   Payments,
@@ -44,7 +43,6 @@ const AdminRoutes: React.FC<AdminRoutesProps> = ({ isAuthenticated }) => {
         <Route path="/tickets" element={<Tickets />} />
         <Route path="/revenue" element={<Revenue />} />
         <Route path="/analytics" element={<Analytics />} />
-        <Route path="/cafes" element={<Cafes />} />
         <Route path="/users" element={<Users />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
