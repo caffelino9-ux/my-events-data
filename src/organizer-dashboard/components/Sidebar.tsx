@@ -87,8 +87,8 @@ const Sidebar: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
   const links = [
     { name: 'My Events', path: '/organizer/my-events', icon: '📅' },
     { name: 'Registrations', path: '/organizer/registrations', icon: '👥' },
-    { name: 'Revenue Overview', path: '/organizer/revenue', icon: '💰' },
-    { name: 'Earnings & Analytics', path: '/organizer/earnings', icon: '📈' },
+    { name: 'My Event Revenue', path: '/organizer/event-revenue', icon: '💰' },
+    { name: 'Dashboard Summary', path: '/organizer/earnings', icon: '📈' },
     { name: 'Payout History', path: '/organizer/settlements', icon: '🏦' },
     { name: 'Refunds', path: '/organizer/refunds', icon: '💸' },
   ];

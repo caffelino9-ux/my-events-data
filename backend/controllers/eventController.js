@@ -3,6 +3,7 @@ const EventDraft = require('../models/EventDraft');
 const Registration = require('../models/Registration');
 const Settlement = require('../models/Settlement');
 const Refund = require('../models/Refund');
+const Payment = require('../models/Payment');
 const cloudinary = require('../config/cloudinary');
 const { Parser } = require('json2csv');
 
@@ -94,7 +95,9 @@ exports.getMyEvents = async (req, res) => {
     const organizerId = req.cafe.id || req.cafe._id;
     const eventsRaw = await Event.find({ organizerId }).sort({ createdAt: -1 });
     
-    const events = eventsRaw.map(e => {
+    // We will attach registration info here
+    const events = [];
+    for (let e of eventsRaw) {
       const obj = e.toObject();
       if (obj.bankDetailsEncrypted) {
         try {
@@ -104,8 +107,32 @@ exports.getMyEvents = async (req, res) => {
           console.error("Failed to decode bank details");
         }
       }
-      return obj;
-    });
+
+      // Aggregate registrations data
+      const regs = await Registration.find({ eventId: e._id });
+      let paidUsers = 0;
+      let freeUsers = 0;
+      let revenue = 0;
+      
+      regs.forEach(r => {
+        if (r.amountPaid > 0) {
+          paidUsers += 1;
+          revenue += r.amountPaid;
+        } else {
+          freeUsers += 1;
+        }
+      });
+      
+      const platformFee = revenue * 0.05;
+      
+      obj.paidUsers = paidUsers;
+      obj.freeUsers = freeUsers;
+      obj.registrationsCount = regs.length;
+      obj.revenue = revenue;
+      obj.settlementPending = revenue - platformFee;
+
+      events.push(obj);
+    }
 
     res.status(200).json({ success: true, events });
   } catch (error) {
@@ -129,7 +156,11 @@ exports.getEventById = async (req, res) => {
         }
     }
 
-    res.status(200).json({ success: true, event: obj });
+    // Attach payments and registrations
+    const registrations = await Registration.find({ eventId: event._id });
+    const payments = await Payment.find({ eventId: event._id }).populate('userId', 'name email');
+
+    res.status(200).json({ success: true, event: obj, registrations, payments });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -212,42 +243,73 @@ exports.getEarnings = async (req, res) => {
     const organizerId = req.cafe.id || req.cafe._id;
     
     // Auto-sync settlements for this organizer's events
-    const events = await Event.find({ organizerId, ticketsSold: { $gt: 0 } });
+    const events = await Event.find({ organizerId });
     let totalRevenue = 0;
-    let ticketsSold = 0;
-
+    
     for (const e of events) {
-      const revenue = (e.ticketsSold || 0) * (e.ticketPrice || 0);
-      totalRevenue += revenue;
-      ticketsSold += e.ticketsSold || 0;
+      const regs = await Registration.find({ eventId: e._id });
+      let eventRevenue = 0;
+      let paidUsers = 0;
+      let freeUsers = 0;
+      let ticketsSold = 0;
+
+      regs.forEach(r => {
+        ticketsSold += (r.ticketCount || 1);
+        if (r.amountPaid > 0) {
+          paidUsers += 1;
+          eventRevenue += r.amountPaid;
+        } else {
+          freeUsers += 1;
+        }
+      });
       
-      const platformFeeAmount = revenue * 0.05;
-      const amountPayable = revenue - platformFeeAmount;
-      
-      await Settlement.findOneAndUpdate(
-        { eventId: e._id },
-        {
-          eventId: e._id,
-          organizerId: e.organizerId,
-          totalRevenue: revenue,
-          platformFeePercentage: 5,
-          platformFeeAmount,
-          amountPayable,
-        },
-        { upsert: true, setDefaultsOnInsert: true }
-      );
+      totalRevenue += eventRevenue;
+
+      if (ticketsSold > 0) {
+        const platformFeeAmount = eventRevenue * 0.05;
+        const amountPayable = eventRevenue - platformFeeAmount;
+        
+        await Settlement.findOneAndUpdate(
+          { eventId: e._id },
+          {
+            eventId: e._id,
+            organizerId: e.organizerId,
+            totalRevenue: eventRevenue,
+            ticketsSold,
+            paidUsers,
+            freeUsers,
+            platformFeePercentage: 5,
+            platformFeeAmount,
+            amountPayable,
+          },
+          { upsert: true, setDefaultsOnInsert: true }
+        );
+      }
     }
 
     const settlements = await Settlement.find({ organizerId });
-    const pendingSettlements = settlements.filter(s => s.status === 'Pending' || s.status === 'Processing').reduce((acc, s) => acc + s.amountPayable, 0);
+    const pendingSettlements = settlements.filter(s => s.status !== 'Paid').reduce((acc, s) => acc + s.amountPayable, 0);
     const completedSettlements = settlements.filter(s => s.status === 'Paid').reduce((acc, s) => acc + s.amountPayable, 0);
+
+    const allRegs = await Registration.find({ organizerId });
+    const totalRegistrations = allRegs.length;
+    let totalPaidUsers = 0;
+    let totalFreeUsers = 0;
+    
+    allRegs.forEach(r => {
+      if (r.amountPaid > 0) totalPaidUsers++;
+      else totalFreeUsers++;
+    });
 
     res.status(200).json({ 
       success: true, 
+      totalEvents: events.length,
+      totalRegistrations,
+      totalPaidUsers,
+      totalFreeUsers,
       totalRevenue,
       pendingSettlements,
-      completedSettlements,
-      ticketsSold
+      completedSettlements
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

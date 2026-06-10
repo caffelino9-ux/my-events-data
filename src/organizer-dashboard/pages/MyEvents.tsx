@@ -75,9 +75,13 @@ const MyEvents: React.FC = () => {
               <h3>{ev.eventName || 'Draft Event'}</h3>
               <p>📅 {ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : 'TBD'}</p>
               <p>📍 {ev.venueName || 'Venue TBD'}</p>
-              <p style={{ marginTop: '12px', fontWeight: 'bold', color: theme.colors.success }}>
-                Tickets Sold: {ev.ticketsSold || 0} / {ev.maxSeats || 0}
-              </p>
+              <div style={{ marginTop: '12px', fontSize: '13px' }}>
+                <p><b>Registrations:</b> {ev.registrationsCount || 0}</p>
+                <p><b>Paid Users:</b> <span style={{ color: theme.colors.success }}>{ev.paidUsers || 0}</span></p>
+                <p><b>Free Users:</b> {ev.freeUsers || 0}</p>
+                <p><b>Revenue:</b> ₹{(ev.revenue || 0).toLocaleString()}</p>
+                <p><b>Settlement Pending:</b> <span style={{ color: theme.colors.warning }}>₹{(ev.settlementPending || 0).toLocaleString()}</span></p>
+              </div>
             </Content>
           </Card>
         ))}

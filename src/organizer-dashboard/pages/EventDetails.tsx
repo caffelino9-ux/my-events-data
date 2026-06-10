@@ -16,19 +16,18 @@ const Container = styled.div`
 const EventDetails: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [event, setEvent] = useState<any>(null);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchEvent = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_BASE_URL}/events/my-events`, {
+        const res = await axios.get(`${API_BASE_URL}/events/event/${id}`, {
           withCredentials: true,
           headers: { Authorization: `Bearer ${token}` }
         });
-        const found = res.data.events.find((e: any) => e._id === id);
-        setEvent(found);
+        setData(res.data);
       } catch (error) {
         console.error(error);
       } finally {
@@ -39,7 +38,16 @@ const EventDetails: React.FC = () => {
   }, [id]);
 
   if (loading) return <div>Loading details...</div>;
-  if (!event) return <div>Event not found.</div>;
+  if (!data || !data.event) return <div>Event not found.</div>;
+
+  const { event, registrations = [], payments = [] } = data;
+  
+  const revenue = registrations.reduce((sum: number, r: any) => sum + (r.amountPaid || 0), 0);
+  const platformFee = revenue * 0.05;
+  const settlementAmount = revenue - platformFee;
+  const paidUsers = registrations.filter((r: any) => r.amountPaid > 0).length;
+  const freeUsers = registrations.filter((r: any) => r.amountPaid === 0).length;
+  const ticketsSold = registrations.reduce((sum: number, r: any) => sum + (r.ticketCount || 1), 0);
 
   return (
     <Container>
@@ -113,6 +121,53 @@ const EventDetails: React.FC = () => {
             <p style={{ color: theme.colors.gray600, marginTop: '12px' }}>No bank details provided for this event.</p>
           )}
         </div>
+
+        <div style={{ gridColumn: '1 / -1', marginTop: '16px', padding: '24px', background: theme.colors.white, borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <h3 style={{ borderBottom: `2px solid ${theme.colors.gray200}`, paddingBottom: '12px', marginBottom: '24px' }}>Financial Breakdown</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div><p><b>Total Revenue:</b> <span style={{ color: theme.colors.success, fontSize: '18px' }}>₹{revenue.toLocaleString()}</span></p></div>
+            <div><p><b>Paid Users:</b> {paidUsers}</p></div>
+            <div><p><b>Free Users:</b> {freeUsers}</p></div>
+            <div><p><b>Total Registrations:</b> {ticketsSold}</p></div>
+            <div><p><b>Platform Fee (5%):</b> <span style={{ color: theme.colors.warning }}>-₹{platformFee.toLocaleString()}</span></p></div>
+            <div><p><b>Settlement Amount:</b> <span style={{ color: theme.colors.success, fontSize: '18px', fontWeight: 'bold' }}>₹{settlementAmount.toLocaleString()}</span></p></div>
+          </div>
+        </div>
+
+        <div style={{ gridColumn: '1 / -1', marginTop: '16px', padding: '24px', background: theme.colors.white, borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <h3 style={{ borderBottom: `2px solid ${theme.colors.gray200}`, paddingBottom: '12px', marginBottom: '24px' }}>Payment History</h3>
+          {payments.length === 0 ? <p>No paid transactions found.</p> : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}`, background: theme.colors.gray100 }}>User Name</th>
+                    <th style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}`, background: theme.colors.gray100 }}>Email</th>
+                    <th style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}`, background: theme.colors.gray100 }}>Phone</th>
+                    <th style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}`, background: theme.colors.gray100 }}>Amount Paid</th>
+                    <th style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}`, background: theme.colors.gray100 }}>Payment ID</th>
+                    <th style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}`, background: theme.colors.gray100 }}>Date</th>
+                    <th style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}`, background: theme.colors.gray100 }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((p: any) => (
+                    <tr key={p._id}>
+                      <td style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}` }}>{p.userId?.name || 'Guest'}</td>
+                      <td style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}` }}>{p.userId?.email || 'N/A'}</td>
+                      <td style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}` }}>{p.userId?.phone || 'N/A'}</td>
+                      <td style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}`, color: theme.colors.success, fontWeight: 'bold' }}>₹{p.amount}</td>
+                      <td style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}`, fontFamily: 'monospace' }}>{p.transactionId}</td>
+                      <td style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}` }}>{new Date(p.createdAt).toLocaleDateString()}</td>
+                      <td style={{ padding: '12px', borderBottom: `1px solid ${theme.colors.gray200}`, color: theme.colors.success }}>{p.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
       </div>
     </Container>
   );

@@ -11,6 +11,7 @@ import Revenue from './pages/Revenue';
 import Earnings from './pages/Earnings';
 import Settlements from './pages/Settlements';
 import Refunds from './pages/Refunds';
+import EventRevenue from './pages/EventRevenue';
 
 const ProtectedRoutes: React.FC = () => {
   const { isAuthenticated } = useOrganizer();
@@ -26,6 +27,7 @@ const ProtectedRoutes: React.FC = () => {
         <Route path="/my-events/:id" element={<EventDetails />} />
         <Route path="/registrations" element={<Registrations />} />
         <Route path="/revenue" element={<Revenue />} />
+        <Route path="/event-revenue" element={<EventRevenue />} />
         <Route path="/earnings" element={<Earnings />} />
         <Route path="/settlements" element={<Settlements />} />
         <Route path="/refunds" element={<Refunds />} />

@@ -49,10 +49,12 @@ const StatValue = styled.div`
 
 const Earnings: React.FC = () => {
   const [data, setData] = useState({
+    totalEvents: 0,
+    totalRegistrations: 0,
+    totalPaidUsers: 0,
+    totalFreeUsers: 0,
     totalRevenue: 0,
-    pendingSettlements: 0,
-    completedSettlements: 0,
-    ticketsSold: 0
+    pendingSettlements: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -79,20 +81,28 @@ const Earnings: React.FC = () => {
       </Header>
       <Grid>
         <StatCard>
+          <StatLabel>Total Events</StatLabel>
+          <StatValue>{data.totalEvents}</StatValue>
+        </StatCard>
+        <StatCard>
+          <StatLabel>Total Registrations</StatLabel>
+          <StatValue>{data.totalRegistrations}</StatValue>
+        </StatCard>
+        <StatCard>
+          <StatLabel>Total Paid Users</StatLabel>
+          <StatValue style={{ color: theme.colors.success }}>{data.totalPaidUsers}</StatValue>
+        </StatCard>
+        <StatCard>
+          <StatLabel>Total Free Users</StatLabel>
+          <StatValue style={{ color: theme.colors.gray600 }}>{data.totalFreeUsers}</StatValue>
+        </StatCard>
+        <StatCard>
           <StatLabel>Total Revenue</StatLabel>
-          <StatValue style={{ color: theme.colors.coffeeMedium }}>₹{data.totalRevenue.toLocaleString()}</StatValue>
+          <StatValue style={{ color: theme.colors.success }}>₹{data.totalRevenue.toLocaleString()}</StatValue>
         </StatCard>
         <StatCard>
-          <StatLabel>Pending Payouts</StatLabel>
+          <StatLabel>Pending Settlement</StatLabel>
           <StatValue style={{ color: theme.colors.warning }}>₹{data.pendingSettlements.toLocaleString()}</StatValue>
-        </StatCard>
-        <StatCard>
-          <StatLabel>Completed Payouts</StatLabel>
-          <StatValue style={{ color: theme.colors.success }}>₹{data.completedSettlements.toLocaleString()}</StatValue>
-        </StatCard>
-        <StatCard>
-          <StatLabel>Total Tickets Sold</StatLabel>
-          <StatValue>{data.ticketsSold}</StatValue>
         </StatCard>
       </Grid>
     </Container>
