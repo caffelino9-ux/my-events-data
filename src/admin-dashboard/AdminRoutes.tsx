@@ -5,7 +5,6 @@ import AdminLayout from './components/Layout/AdminLayout';
 import {
   Dashboard,
   Events,
-  Organizers,
   BankVerification,
   Registrations,
   Tickets,
@@ -33,7 +32,6 @@ const AdminRoutes: React.FC<AdminRoutesProps> = ({ isAuthenticated }) => {
         <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/events" element={<Events />} />
-        <Route path="/organizers" element={<Organizers />} />
         <Route path="/verification" element={<BankVerification />} />
         <Route path="/registrations" element={<Registrations />} />
         <Route path="/event-revenue" element={<EventRevenue />} />

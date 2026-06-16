@@ -11,6 +11,8 @@ interface AdminContextType {
   admin: AdminUser | null;
   isAuthenticated: boolean;
   logout: () => void;
+  notifications: any[];
+  markNotificationAsRead: (id: string) => void;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -23,6 +25,15 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     role: 'platform_owner'
   }); // Mocked for now since admin login logic varies
 
+  const [notifications, setNotifications] = useState<any[]>([
+    { id: '1', title: 'New Organizer Request', message: 'Coffee Connect requested verification.', read: false, createdAt: new Date().toISOString() },
+    { id: '2', title: 'Event Sold Out', message: 'The Weekend Hackathon is sold out!', read: false, createdAt: new Date(Date.now() - 3600000).toISOString() },
+  ]);
+
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setAdmin(null);
@@ -30,7 +41,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <AdminContext.Provider value={{ admin, isAuthenticated: !!admin, logout }}>
+    <AdminContext.Provider value={{ admin, isAuthenticated: !!admin, logout, notifications, markNotificationAsRead }}>
       {children}
     </AdminContext.Provider>
   );

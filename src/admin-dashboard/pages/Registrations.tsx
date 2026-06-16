@@ -48,10 +48,29 @@ const Table = styled.table`
   tr:last-child td { border-bottom: none; }
 `;
 
+const ControlsRow = styled.div`
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+
+  input, select {
+    padding: 10px 16px;
+    border: 1px solid ${theme.colors.gray300};
+    border-radius: 8px;
+    outline: none;
+    min-width: 200px;
+    &:focus { border-color: ${theme.colors.gold}; }
+  }
+`;
+
 const Registrations: React.FC = () => {
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'All' | 'Free' | 'Paid'>('All');
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState('All Time');
 
   useEffect(() => {
     const fetchRegs = async () => {
@@ -72,9 +91,34 @@ const Registrations: React.FC = () => {
   }, []);
 
   const filteredRegs = registrations.filter(r => {
-    if (activeTab === 'Free') return r.amountPaid === 0;
-    if (activeTab === 'Paid') return r.amountPaid > 0;
-    return true; // All
+    // Tab
+    if (activeTab === 'Free' && r.amountPaid > 0) return false;
+    if (activeTab === 'Paid' && r.amountPaid === 0) return false;
+    
+    // Search
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!(r.userName?.toLowerCase().includes(q) || r.email?.toLowerCase().includes(q) || r.phone?.includes(q))) {
+        return false;
+      }
+    }
+    
+    // Date
+    if (dateFilter !== 'All Time') {
+      const regDate = new Date(r.registrationDate);
+      const today = new Date();
+      if (dateFilter === 'Today') {
+        if (regDate.toDateString() !== today.toDateString()) return false;
+      } else if (dateFilter === 'This Week') {
+        const weekAgo = new Date(today.setDate(today.getDate() - 7));
+        if (regDate < weekAgo) return false;
+      } else if (dateFilter === 'This Month') {
+        const monthAgo = new Date(today.setMonth(today.getMonth() - 1));
+        if (regDate < monthAgo) return false;
+      }
+    }
+
+    return true;
   });
 
   if (loading) return <div>Loading registrations...</div>;
@@ -89,6 +133,25 @@ const Registrations: React.FC = () => {
         <Tab active={activeTab === 'Paid'} onClick={() => setActiveTab('Paid')}>Paid Registrations</Tab>
       </TabContainer>
 
+      <ControlsRow>
+        <input 
+          type="text" 
+          placeholder="Search by Name, Email, or Phone" 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ flex: 1 }}
+        />
+        <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
+          <option value="All Time">All Time</option>
+          <option value="Today">Today</option>
+          <option value="This Week">This Week</option>
+          <option value="This Month">This Month</option>
+        </select>
+        <button style={{ background: theme.colors.coffeeDark, color: 'white', padding: '10px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => window.open(`${API_BASE_URL}/admin/export/registrations`, '_blank')}>
+          Export CSV
+        </button>
+      </ControlsRow>
+
       <TableCard>
         <div style={{ overflowX: 'auto' }}>
           <Table>
@@ -97,11 +160,12 @@ const Registrations: React.FC = () => {
                 <th>User Name</th>
                 <th>Email</th>
                 <th>Phone</th>
+                <th>Gender</th>
                 <th>Event Name</th>
-                <th>Registration Type</th>
+                <th>Ticket Type</th>
                 <th>Amount</th>
                 <th>Payment Status</th>
-                <th>Date</th>
+                <th>Registration Time</th>
               </tr>
             </thead>
             <tbody>
@@ -110,6 +174,7 @@ const Registrations: React.FC = () => {
                   <td style={{ fontWeight: '600' }}>{r.userName}</td>
                   <td>{r.email}</td>
                   <td>{r.phone}</td>
+                  <td>{r.gender || 'Not Specified'}</td>
                   <td>{r.eventId?.eventName || 'Deleted Event'}</td>
                   <td>
                     <span style={{ padding: '4px 12px', borderRadius: '9999px', fontSize: '12px', fontWeight: 600, background: r.amountPaid > 0 ? 'rgba(212, 175, 55, 0.1)' : 'rgba(46, 204, 113, 0.1)', color: r.amountPaid > 0 ? theme.colors.gold : theme.colors.success }}>
@@ -120,10 +185,10 @@ const Registrations: React.FC = () => {
                   <td style={{ textTransform: 'uppercase', fontWeight: 600, color: r.paymentStatus === 'Completed' ? theme.colors.success : theme.colors.warning }}>
                     {r.paymentStatus}
                   </td>
-                  <td>{new Date(r.registrationDate).toLocaleDateString()}</td>
+                  <td>{new Date(r.registrationDate).toLocaleString()}</td>
                 </tr>
               ))}
-              {filteredRegs.length === 0 && <tr><td colSpan={8}>No registrations found.</td></tr>}
+              {filteredRegs.length === 0 && <tr><td colSpan={9}>No registrations found.</td></tr>}
             </tbody>
           </Table>
         </div>

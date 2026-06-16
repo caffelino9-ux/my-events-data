@@ -5,7 +5,8 @@ const {
   updateEventStatus, suspendEvent, deleteEvent,
   approveCafe, rejectCafe, getPendingCafes,
   getSettlements, updateSettlementStatus, getAllPayments,
-  exportRegistrationsCsv, exportPaymentsCsv, exportSettlementsCsv
+  exportRegistrationsCsv, exportPaymentsCsv, exportSettlementsCsv,
+  getRevenueAnalytics
 } = require("../controllers/admin.controller");
 
 // Dashboard
@@ -22,9 +23,10 @@ router.delete("/event/:id", deleteEvent);
 // Organizers
 router.get("/organizers", getAllOrganizers);
 
-// Registrations & Payments
+// Registrations & Payments & Revenue
 router.get("/registrations", getAllRegistrations);
 router.get("/payments", getAllPayments);
+router.get("/revenue-analytics", getRevenueAnalytics);
 
 // Settlements
 router.get("/settlements", getSettlements);

@@ -122,8 +122,8 @@ const Settlements: React.FC = () => {
               <th>Free Users</th>
               <th>Revenue</th>
               <th>Platform Fee</th>
-              <th>Payable Amount</th>
               <th>Status</th>
+              <th>Date</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -145,6 +145,7 @@ const Settlements: React.FC = () => {
                   <StatusBadge status={s.status}>{s.status}</StatusBadge>
                   {s.utrNumber && <div style={{ fontSize: '11px', marginTop: '4px' }}>UTR: {s.utrNumber}</div>}
                 </td>
+                <td style={{ color: theme.colors.gray600 }}>{new Date(s.createdAt).toLocaleDateString()}</td>
                 <td>
                   {s.status !== 'Paid' && (
                     <ActionButton onClick={() => handleMarkPaid(s._id)}>Mark Paid</ActionButton>

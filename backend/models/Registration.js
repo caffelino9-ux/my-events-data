@@ -12,6 +12,7 @@ const registrationSchema = new mongoose.Schema(
     ticketCount: { type: Number, required: true, default: 1 },
     amountPaid: { type: Number, required: true, default: 0 },
     paymentStatus: { type: String, enum: ['Pending', 'Completed', 'Failed'], default: 'Completed' },
+    gender: { type: String, enum: ['Male', 'Female', 'Other', 'Not Specified'], default: 'Not Specified' },
     registrationDate: { type: Date, default: Date.now },
     ticketNumber: { type: String, required: true, unique: true },
     checkInStatus: { type: Boolean, default: false },

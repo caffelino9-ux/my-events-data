@@ -25,6 +25,12 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
     
+    gender: {
+      type: String,
+      enum: ['Male', 'Female', 'Other', 'Not Specified'],
+      default: 'Not Specified'
+    },
+    
     animeProfilePicture: {
       type: String,
     },

@@ -9,59 +9,80 @@ const Container = styled.div`
   margin: 0 auto;
 `;
 
+const Header = styled.div`
+  margin-bottom: 32px;
+  h1 {
+    color: ${theme.colors.coffeeDark};
+    font-size: 28px;
+    font-weight: 700;
+  }
+  p {
+    color: ${theme.colors.gray600};
+    font-size: 15px;
+    margin-top: 4px;
+  }
+`;
+
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
   margin-bottom: 32px;
 `;
 
-const StatCard = styled.div<{ warning?: boolean, success?: boolean }>`
-  background: ${theme.colors.white};
+const StatCard = styled.div<{ warning?: boolean, success?: boolean, highlight?: boolean }>`
+  background: ${props => props.highlight ? theme.colors.coffeeDark : theme.colors.white};
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
   border: ${props => props.warning ? `2px solid ${theme.colors.warning}` : props.success ? `2px solid ${theme.colors.success}` : 'none'};
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
 
   h3 { 
-    color: ${props => props.warning ? theme.colors.warning : props.success ? theme.colors.success : theme.colors.gray600}; 
+    color: ${props => props.highlight ? theme.colors.gold : (props.warning ? theme.colors.warning : props.success ? theme.colors.success : theme.colors.gray600)}; 
     font-size: 13px; 
     font-weight: 600; 
-    margin-bottom: 8px; 
+    margin-bottom: 12px; 
     text-transform: uppercase; 
     letter-spacing: 0.5px; 
   }
   .value { 
-    font-size: 32px; 
+    font-size: 36px; 
     font-weight: 700; 
-    color: ${props => props.warning ? theme.colors.warning : props.success ? theme.colors.success : theme.colors.coffeeDark}; 
+    color: ${props => props.highlight ? theme.colors.white : (props.warning ? theme.colors.warning : props.success ? theme.colors.success : theme.colors.gray800)}; 
+    margin-bottom: 4px;
   }
+  .subtext {
+    font-size: 13px;
+    color: ${props => props.highlight ? 'rgba(255,255,255,0.7)' : theme.colors.gray500};
+  }
+`;
+
+const SectionTitle = styled.h2`
+  color: ${theme.colors.coffeeDark};
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 700;
 `;
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
-  const [settlements, setSettlements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const [statsRes, settlementsRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/admin/dashboard-stats`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_BASE_URL}/admin/settlements`, { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-        
-        if (typeof statsRes.data === 'string' || typeof settlementsRes.data === 'string') {
-          throw new Error("Received HTML/String instead of JSON! Is your VITE_API_URL pointing to the frontend instead of the backend API?");
-        }
-        
+        const statsRes = await axios.get(`${API_BASE_URL}/admin/dashboard-stats`, { headers: { Authorization: `Bearer ${token}` } });
         setStats(statsRes.data);
-        setSettlements(Array.isArray(settlementsRes.data) ? settlementsRes.data : []);
       } catch (error: any) {
         console.error('Failed to load dashboard data', error);
-        setError(error.message || "Network Error");
       } finally {
         setLoading(false);
       }
@@ -70,52 +91,66 @@ const Dashboard: React.FC = () => {
   }, []);
 
   if (loading) return <div>Loading platform overview...</div>;
-  if (error) return <div style={{ color: 'red', padding: '20px' }}>Error loading dashboard: {error}. Are you sure your backend is deployed and VITE_API_URL is set?</div>;
 
   return (
     <Container>
-      <h1 style={{ color: theme.colors.coffeeDark, marginBottom: '24px' }}>Platform Overview</h1>
+      <Header>
+        <h1>Platform Overview</h1>
+        <p>Live metrics and performance indicators</p>
+      </Header>
       
+      <SectionTitle>Key Performance Indicators</SectionTitle>
       <Grid>
-        <StatCard><h3>Total Events</h3><div className="value">{stats?.totalEvents || 0}</div></StatCard>
-        <StatCard><h3>Total Tickets Sold</h3><div className="value">{stats?.totalTicketsSold || 0}</div></StatCard>
-        <StatCard success><h3>Total Revenue</h3><div className="value">₹{stats?.totalRevenue?.toLocaleString() || 0}</div></StatCard>
-        <StatCard warning><h3>Pending Settlements</h3><div className="value">₹{stats?.pendingSettlements?.toLocaleString() || 0}</div></StatCard>
-        <StatCard success><h3>Completed Settlements</h3><div className="value">₹{stats?.completedSettlements?.toLocaleString() || 0}</div></StatCard>
+        <StatCard highlight>
+          <h3>Total Revenue</h3>
+          <div className="value">₹{stats?.totalRevenue?.toLocaleString() || 0}</div>
+          <div className="subtext">All time platform earnings</div>
+        </StatCard>
+        <StatCard success>
+          <h3>Today's Revenue</h3>
+          <div className="value">₹{stats?.todaysRevenue?.toLocaleString() || 0}</div>
+          <div className="subtext">Generated today</div>
+        </StatCard>
+        <StatCard>
+          <h3>Total Tickets Sold</h3>
+          <div className="value">{stats?.totalTicketsSold?.toLocaleString() || 0}</div>
+          <div className="subtext">Across all events</div>
+        </StatCard>
+        <StatCard>
+          <h3>Today's Registrations</h3>
+          <div className="value">{stats?.todaysRegistrations?.toLocaleString() || 0}</div>
+          <div className="subtext">New users today</div>
+        </StatCard>
       </Grid>
 
-      <h2 style={{ color: theme.colors.coffeeDark, marginBottom: '16px', marginTop: '32px' }}>Recent Payment Settlements</h2>
-      <div style={{ background: theme.colors.white, borderRadius: '16px', padding: '0', overflowX: 'auto', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-        <table style={{ width: 'min-content', minWidth: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ padding: '16px', background: theme.colors.gray100, color: theme.colors.gray600, textAlign: 'left', fontWeight: '600', fontSize: '14px', textTransform: 'uppercase' }}>Organizer</th>
-              <th style={{ padding: '16px', background: theme.colors.gray100, color: theme.colors.gray600, textAlign: 'left', fontWeight: '600', fontSize: '14px', textTransform: 'uppercase' }}>Account Holder</th>
-              <th style={{ padding: '16px', background: theme.colors.gray100, color: theme.colors.gray600, textAlign: 'left', fontWeight: '600', fontSize: '14px', textTransform: 'uppercase' }}>Mobile</th>
-              <th style={{ padding: '16px', background: theme.colors.gray100, color: theme.colors.gray600, textAlign: 'left', fontWeight: '600', fontSize: '14px', textTransform: 'uppercase' }}>UPI ID</th>
-              <th style={{ padding: '16px', background: theme.colors.gray100, color: theme.colors.gray600, textAlign: 'left', fontWeight: '600', fontSize: '14px', textTransform: 'uppercase' }}>Amount Payable</th>
-              <th style={{ padding: '16px', background: theme.colors.gray100, color: theme.colors.gray600, textAlign: 'left', fontWeight: '600', fontSize: '14px', textTransform: 'uppercase' }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {settlements.slice(0, 5).map((s: any) => (
-              <tr key={s._id} style={{ borderBottom: `1px solid ${theme.colors.gray200}` }}>
-                <td style={{ padding: '16px', color: theme.colors.gray800, fontWeight: '600', whiteSpace: 'nowrap' }}>{s.organizerName}</td>
-                <td style={{ padding: '16px', color: theme.colors.gray800, whiteSpace: 'nowrap' }}>{s.bankDetails?.accountHolderName || s.bankDetails?.accountHolder || 'N/A'}</td>
-                <td style={{ padding: '16px', color: theme.colors.gray800, whiteSpace: 'nowrap' }}>{s.bankDetails?.paymentMobileNumber || s.bankDetails?.phoneNumber || 'N/A'}</td>
-                <td style={{ padding: '16px', color: theme.colors.gray800, whiteSpace: 'nowrap' }}>{s.bankDetails?.upiId || s.bankDetails?.upi || 'N/A'}</td>
-                <td style={{ padding: '16px', color: theme.colors.success, fontWeight: 'bold', whiteSpace: 'nowrap' }}>₹{s.amountPayable.toLocaleString()}</td>
-                <td style={{ padding: '16px', whiteSpace: 'nowrap' }}>
-                  <span style={{ color: s.status === 'Paid' ? theme.colors.success : theme.colors.warning, fontWeight: 'bold' }}>{s.status}</span>
-                </td>
-              </tr>
-            ))}
-            {settlements.length === 0 && (
-              <tr><td colSpan={6} style={{ padding: '16px', textAlign: 'center', color: theme.colors.gray600 }}>No settlements found</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <SectionTitle>Event & Organizer Activity</SectionTitle>
+      <Grid>
+        <StatCard>
+          <h3>Total Events</h3>
+          <div className="value">{stats?.totalEvents || 0}</div>
+          <div className="subtext">Lifetime events created</div>
+        </StatCard>
+        <StatCard>
+          <h3>Active Events</h3>
+          <div className="value">{stats?.activeEvents || 0}</div>
+          <div className="subtext">Currently live & published</div>
+        </StatCard>
+        <StatCard>
+          <h3>Upcoming Events</h3>
+          <div className="value">{stats?.upcomingEvents || 0}</div>
+          <div className="subtext">Scheduled for future dates</div>
+        </StatCard>
+        <StatCard>
+          <h3>Total Organizers</h3>
+          <div className="value">{stats?.totalOrganizers || 0}</div>
+          <div className="subtext">Registered partners</div>
+        </StatCard>
+        <StatCard>
+          <h3>Avg Tickets / Event</h3>
+          <div className="value">{stats?.averageTicketsPerEvent || 0}</div>
+          <div className="subtext">Based on active events</div>
+        </StatCard>
+      </Grid>
     </Container>
   );
 };

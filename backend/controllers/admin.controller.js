@@ -50,15 +50,20 @@ const getPlatformStats = async (req, res) => {
     
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
+    let todaysRegistrations = 0;
+
     allRegs.forEach(r => {
       const regDate = new Date(r.registrationDate);
       if (regDate >= startOfToday) {
         todaysRevenue += (r.amountPaid || 0);
+        todaysRegistrations += 1;
       }
       if (regDate >= startOfMonth) {
         thisMonthRevenue += (r.amountPaid || 0);
       }
     });
+
+    const averageTicketsPerEvent = activeEvents > 0 ? Math.round(totalTicketsSold / activeEvents) : 0;
 
     // Real pending/completed settlements
     const allSettlements = await Settlement.find();
@@ -87,7 +92,9 @@ const getPlatformStats = async (req, res) => {
       todaysRevenue,
       thisMonthRevenue,
       pendingSettlements,
-      completedSettlements
+      completedSettlements,
+      todaysRegistrations,
+      averageTicketsPerEvent
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -97,8 +104,21 @@ const getPlatformStats = async (req, res) => {
 // All Events
 const getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find().sort({ createdAt: -1 });
-    res.json(events);
+    const events = await Event.find().sort({ createdAt: -1 }).lean();
+    const registrations = await Registration.find().lean();
+    
+    const enrichedEvents = events.map(e => {
+      const eventRegs = registrations.filter(r => r.eventId.toString() === e._id.toString());
+      const registrationCount = eventRegs.length;
+      const checkInsCount = eventRegs.filter(r => r.checkInStatus).length;
+      return {
+        ...e,
+        registrationCount,
+        checkInsCount
+      };
+    });
+    
+    res.json(enrichedEvents);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -121,15 +141,38 @@ const getEventById = async (req, res) => {
     }
 
     const organizer = await Cafe.findById(event.organizerId);
-    const registrations = await Registration.find({ eventId: event._id });
+    const registrations = await Registration.find({ eventId: event._id }).sort({ registrationDate: -1 });
     const payments = await Payment.find({ eventId: event._id }).populate('userId', 'name email');
     
+    let maleCount = 0;
+    let femaleCount = 0;
+    let otherCount = 0;
+    let newRegistrationsToday = 0;
+    const startOfToday = new Date();
+    startOfToday.setHours(0,0,0,0);
+    
+    registrations.forEach(r => {
+      if (r.gender === 'Male') maleCount++;
+      else if (r.gender === 'Female') femaleCount++;
+      else otherCount++;
+      
+      if (new Date(r.registrationDate) >= startOfToday) {
+        newRegistrationsToday++;
+      }
+    });
+
     res.json({
       event: event.toObject(),
       bankDetails: decodedBankDetails,
       organizer,
       registrations,
-      payments
+      payments,
+      analytics: {
+        maleCount,
+        femaleCount,
+        otherCount,
+        newRegistrationsToday
+      }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -390,10 +433,44 @@ const exportSettlementsCsv = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
+// Revenue Analytics
+const getRevenueAnalytics = async (req, res) => {
+  try {
+    const regs = await Registration.find().lean();
+    
+    // Group by day for the last 30 days
+    const dailyMap = {};
+    const today = new Date();
+    for(let i=29; i>=0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      dailyMap[key] = 0;
+    }
+    
+    regs.forEach(r => {
+      if (r.amountPaid > 0) {
+        const d = new Date(r.registrationDate);
+        const key = d.toISOString().split('T')[0];
+        if (dailyMap[key] !== undefined) {
+          dailyMap[key] += r.amountPaid;
+        }
+      }
+    });
+    
+    const dailyRevenue = Object.keys(dailyMap).map(date => ({ date, revenue: dailyMap[date] }));
+    
+    res.json({ dailyRevenue });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = { 
   getPlatformStats, getAllEvents, getEventById, getAllOrganizers, getAllRegistrations,
   updateEventStatus, suspendEvent, deleteEvent,
   approveCafe, rejectCafe, getPendingCafes,
   getSettlements, updateSettlementStatus, getAllPayments,
-  exportRegistrationsCsv, exportPaymentsCsv, exportSettlementsCsv
+  exportRegistrationsCsv, exportPaymentsCsv, exportSettlementsCsv,
+  getRevenueAnalytics
 };

@@ -81,11 +81,18 @@ const EventDetails: React.FC = () => {
   if (loading) return <div>Loading full event details...</div>;
   if (!data || !data.event) return <div>Event not found</div>;
 
-  const { event, organizer, registrations, payments = [] } = data;
+  const { event, organizer, registrations, analytics } = data;
   const revenue = registrations.reduce((sum: number, r: any) => sum + (r.amountPaid || 0), 0);
-  const platformFee = revenue * 0.05;
-  const organizerAmount = revenue - platformFee;
   const ticketsSold = registrations.reduce((sum: number, r: any) => sum + (r.ticketCount || 1), 0);
+  
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const revenueToday = registrations.reduce((sum: number, r: any) => {
+    if (new Date(r.registrationDate) >= today) return sum + (r.amountPaid || 0);
+    return sum;
+  }, 0);
+
+  const conversionRate = event.maxSeats > 0 ? ((ticketsSold / event.maxSeats) * 100).toFixed(1) : 0;
 
   return (
     <Container>
@@ -98,151 +105,69 @@ const EventDetails: React.FC = () => {
       )}
 
       <Section>
-        <Title>Event Details</Title>
+        <Title>Event Information</Title>
         <Grid>
           <div><Label>Event Name</Label><Value>{event.eventName}</Value></div>
-          <div><Label>Event Category</Label><Value>{event.eventCategory}</Value></div>
-          <div><Label>Status</Label><Value>{event.status}</Value></div>
-          <div><Label>Created / Updated</Label><Value>{new Date(event.createdAt).toLocaleDateString()} / {new Date(event.updatedAt).toLocaleDateString()}</Value></div>
-        </Grid>
-        <div style={{ marginTop: '24px' }}><Label>Event Description</Label><Value>{event.eventDescription}</Value></div>
-      </Section>
-
-      <Section>
-        <Title>Location Details</Title>
-        <Grid>
-          <div><Label>Cafe Name</Label><Value>{event.cafeName}</Value></div>
-          <div><Label>Venue Name</Label><Value>{event.venueName}</Value></div>
-          <div style={{ gridColumn: 'span 2' }}><Label>Address</Label><Value>{event.address}, {event.city}, {event.state}, {event.country} - {event.pincode}</Value></div>
-          <div><Label>Google Maps</Label><Value><a href={event.googleMapsLink} target="_blank" rel="noreferrer">View on Maps</a></Value></div>
-          <div><Label>Coordinates</Label><Value>Lat: N/A, Lng: N/A</Value></div>
-        </Grid>
-      </Section>
-
-      <Section>
-        <Title>Date & Time</Title>
-        <Grid>
-          <div><Label>Event Date</Label><Value>{new Date(event.eventDate).toLocaleDateString()}</Value></div>
-          <div><Label>Timezone</Label><Value>{event.timezone}</Value></div>
-          <div><Label>Start Time</Label><Value>{event.startTime}</Value></div>
-          <div><Label>End Time</Label><Value>{event.endTime}</Value></div>
-        </Grid>
-      </Section>
-
-      <Section>
-        <Title>Financial Breakdown</Title>
-        <Grid>
-          <div><Label>Event Name</Label><Value>{event.eventName}</Value></div>
-          <div><Label>Total Tickets Sold</Label><Value>{ticketsSold}</Value></div>
-          <div><Label>Total Revenue</Label><Value style={{ color: theme.colors.success, fontWeight: 'bold' }}>₹{revenue.toLocaleString()}</Value></div>
-          <div><Label>Platform Fee (5%)</Label><Value style={{ color: theme.colors.warning }}>₹{platformFee.toLocaleString()}</Value></div>
-          <div><Label>Organizer Amount</Label><Value style={{ color: theme.colors.gold, fontWeight: 'bold' }}>₹{organizerAmount.toLocaleString()}</Value></div>
-        </Grid>
-      </Section>
-
-      <Section>
-        <Title>Payment History Per Event</Title>
-        {payments.length === 0 ? <p>No paid transactions found.</p> : (
-          <div style={{ overflowX: 'auto' }}>
-            <Table>
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Email</th>
-                  <th>Amount</th>
-                  <th>Payment ID</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((p: any) => (
-                  <tr key={p._id}>
-                    <td style={{ fontWeight: 500 }}>{p.userId?.name || 'Guest'}</td>
-                    <td>{p.userId?.email || 'N/A'}</td>
-                    <td style={{ fontWeight: 'bold', color: theme.colors.success }}>₹{p.amount}</td>
-                    <td style={{ fontFamily: 'monospace' }}>{p.transactionId}</td>
-                    <td>{new Date(p.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        )}
-      </Section>
-
-      <Section>
-        <Title>Ticket Configuration</Title>
-        <Grid>
-          <div><Label>Ticket Type</Label><Value>{event.ticketType}</Value></div>
+          <div><Label>Organizer</Label><Value>{organizer?.name || event.organizerName}</Value></div>
+          <div><Label>Location</Label><Value>{event.cafeName} - {event.venueName}, {event.city}</Value></div>
+          <div><Label>Date & Time</Label><Value>{new Date(event.eventDate).toLocaleDateString()} at {event.startTime}</Value></div>
           <div><Label>Ticket Price</Label><Value>₹{event.ticketPrice}</Value></div>
-          <div><Label>Maximum Seats</Label><Value>{event.maxSeats}</Value></div>
-          <div><Label>Available Seats</Label><Value>{event.availableSeats}</Value></div>
+          <div><Label>Capacity</Label><Value>{event.maxSeats} Seats</Value></div>
+          <div><Label>Status</Label><Value style={{ textTransform: 'uppercase', color: theme.colors.success, fontWeight: 'bold' }}>{event.status}</Value></div>
         </Grid>
       </Section>
 
       <Section>
-        <Title>Organizer Details</Title>
+        <Title>Revenue Analytics</Title>
         <Grid>
-          <div><Label>Organizer Name</Label><Value>{organizer?.name || event.organizerName}</Value></div>
-          <div><Label>Email</Label><Value>{organizer?.email_address_manager || event.organizerEmail}</Value></div>
-          <div><Label>Phone Number</Label><Value>{organizer?.Phonenumber || event.phoneNumber}</Value></div>
-          <div><Label>Instagram ID</Label><Value>{event.eventInstagramId || 'N/A'}</Value></div>
+          <div><Label>Total Revenue</Label><Value style={{ color: theme.colors.success, fontSize: '24px', fontWeight: 'bold' }}>₹{revenue.toLocaleString()}</Value></div>
+          <div><Label>Revenue Today</Label><Value style={{ color: theme.colors.gold, fontSize: '24px', fontWeight: 'bold' }}>₹{revenueToday.toLocaleString()}</Value></div>
+          <div><Label>Tickets Sold</Label><Value>{ticketsSold}</Value></div>
+          <div><Label>Remaining Tickets</Label><Value>{(event.maxSeats || 0) - ticketsSold}</Value></div>
+          <div><Label>Seat Fill Rate</Label><Value>{conversionRate}%</Value></div>
         </Grid>
       </Section>
 
       <Section>
-        <Title>Settlement Details</Title>
+        <Title>Registration Analytics</Title>
         <Grid>
-          {(event.upiId || event.bankDetails?.upiId) && (
-            <div><Label>UPI ID</Label><Value>{event.upiId || event.bankDetails?.upiId}</Value></div>
-          )}
-          {(event.accountHolderName || event.bankDetails?.accountHolderName) && (
-            <div><Label>Account Holder Name</Label><Value>{event.accountHolderName || event.bankDetails?.accountHolderName}</Value></div>
-          )}
-          {(event.bankName || event.bankDetails?.bankName) && (
-            <div><Label>Bank Name</Label><Value>{event.bankName || event.bankDetails?.bankName}</Value></div>
-          )}
-          {(event.accountNumber || event.bankDetails?.accountNumber) && (
-            <div><Label>Account Number</Label><Value>{event.accountNumber || event.bankDetails?.accountNumber}</Value></div>
-          )}
-          {(event.ifscCode || event.bankDetails?.ifscCode) && (
-            <div><Label>IFSC Code</Label><Value>{event.ifscCode || event.bankDetails?.ifscCode}</Value></div>
-          )}
-          {(event.paymentMobileNumber || event.bankDetails?.paymentMobileNumber) && (
-            <div><Label>Payment Mobile Number</Label><Value>{event.paymentMobileNumber || event.bankDetails?.paymentMobileNumber}</Value></div>
-          )}
-          {!(event.upiId || event.bankDetails?.upiId || event.accountHolderName || event.bankDetails?.accountHolderName || event.bankName || event.bankDetails?.bankName || event.accountNumber || event.bankDetails?.accountNumber || event.ifscCode || event.bankDetails?.ifscCode || event.paymentMobileNumber || event.bankDetails?.paymentMobileNumber) && (
-            <div style={{ gridColumn: 'span 2' }}><p style={{ color: theme.colors.warning }}>Bank Info: Not provided or Invalid</p></div>
-          )}
+          <div><Label>Total Registrations</Label><Value>{registrations.length}</Value></div>
+          <div><Label>New Registrations Today</Label><Value>{analytics?.newRegistrationsToday || 0}</Value></div>
+          <div><Label>Male</Label><Value>{analytics?.maleCount || 0}</Value></div>
+          <div><Label>Female</Label><Value>{analytics?.femaleCount || 0}</Value></div>
+          <div><Label>Other / Unspecified</Label><Value>{analytics?.otherCount || 0}</Value></div>
         </Grid>
       </Section>
 
       <Section>
-        <Title>Registrations ({registrations.length})</Title>
-        {registrations.length === 0 ? <p>No registrations yet.</p> : (
-          <div style={{ overflowX: 'auto' }}>
-            <Table>
-              <thead>
-                <tr>
-                  <th>Attendee Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Tickets</th>
-                  <th>Amount Paid</th>
-                </tr>
-              </thead>
-              <tbody>
-                {registrations.map((r: any) => (
-                  <tr key={r._id}>
-                    <td style={{ fontWeight: 500 }}>{r.userName}</td>
-                    <td>{r.email}</td>
-                    <td>{r.phone}</td>
-                    <td>{r.ticketCount}</td>
-                    <td style={{ fontWeight: 'bold' }}>₹{r.amountPaid}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+        <Title>Live Activity Feed</Title>
+        <div style={{ display: 'flex', gap: '32px', marginBottom: '24px' }}>
+          <div style={{ background: theme.colors.coffeeDark, color: 'white', padding: '16px', borderRadius: '12px', flex: 1 }}>
+            <div style={{ fontSize: '13px', opacity: 0.8, textTransform: 'uppercase', marginBottom: '8px' }}>Live Tickets Sold</div>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: theme.colors.gold }}>{ticketsSold}</div>
+          </div>
+          <div style={{ background: theme.colors.coffeeDark, color: 'white', padding: '16px', borderRadius: '12px', flex: 1 }}>
+            <div style={{ fontSize: '13px', opacity: 0.8, textTransform: 'uppercase', marginBottom: '8px' }}>Live Revenue</div>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: theme.colors.success }}>₹{revenue.toLocaleString()}</div>
+          </div>
+        </div>
+
+        <h3 style={{ fontSize: '16px', color: theme.colors.coffeeDark, marginBottom: '16px' }}>Recent Registrations</h3>
+        {registrations.length === 0 ? <p>No activity yet.</p> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {registrations.slice(0, 10).map((r: any) => {
+              const minutesAgo = Math.floor((new Date().getTime() - new Date(r.registrationDate).getTime()) / 60000);
+              let timeStr = minutesAgo < 1 ? 'Just now' : minutesAgo < 60 ? `${minutesAgo} minutes ago` : minutesAgo < 1440 ? `${Math.floor(minutesAgo/60)} hours ago` : `${Math.floor(minutesAgo/1440)} days ago`;
+              return (
+                <div key={r._id} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: theme.colors.gray100, borderRadius: '8px' }}>
+                  <div>
+                    <strong style={{ color: theme.colors.coffeeDark }}>{r.userName}</strong> registered 
+                    {r.amountPaid > 0 ? <span style={{ color: theme.colors.success, fontWeight: 'bold' }}> and paid ₹{r.amountPaid}</span> : ' for a free ticket'}
+                  </div>
+                  <div style={{ color: theme.colors.gray600, fontSize: '13px' }}>{timeStr}</div>
+                </div>
+              );
+            })}
           </div>
         )}
       </Section>

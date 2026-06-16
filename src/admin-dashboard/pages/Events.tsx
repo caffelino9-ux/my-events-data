@@ -78,55 +78,6 @@ const Actions = styled.div`
   .btn-delete { background: #FF6B6B; color: white; }
 `;
 
-const DrawerOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 1000;
-`;
-
-const Drawer = styled.div`
-  position: fixed;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 600px;
-  background: white;
-  z-index: 1001;
-  padding: 32px;
-  overflow-y: auto;
-  box-shadow: -4px 0 15px rgba(0,0,0,0.1);
-  transform: translateX(0);
-
-  @media (max-width: 768px) { width: 100%; }
-
-  .close-btn {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: ${theme.colors.gray600};
-  }
-
-  h2 { color: ${theme.colors.coffeeDark}; margin-bottom: 24px; border-bottom: 2px solid ${theme.colors.gray200}; padding-bottom: 8px; }
-  h3 { color: ${theme.colors.gold}; margin-top: 24px; margin-bottom: 12px; font-size: 16px; }
-  p { margin-bottom: 8px; font-size: 14px; color: ${theme.colors.gray800}; }
-  .label { font-weight: 600; color: ${theme.colors.gray600}; display: inline-block; width: 150px; }
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
 const Modal = styled.div`
   background: white;
   padding: 32px;
@@ -141,17 +92,16 @@ const Modal = styled.div`
   .cancel { background: ${theme.colors.gray200}; color: ${theme.colors.gray800}; }
 `;
 
+import { useNavigate } from 'react-router-dom';
+
 const Events: React.FC = () => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-
-  // Drawer state
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [drawerData, setDrawerData] = useState<any>(null);
 
   // Edit Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -175,13 +125,15 @@ const Events: React.FC = () => {
 
   useEffect(() => { fetchEvents(); }, []);
 
-  const openDrawer = async (id: string) => {
-    setSelectedEventId(id);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API_BASE_URL}/admin/event/${id}`, { headers: { Authorization: `Bearer ${token}` }});
-      setDrawerData(res.data);
-    } catch (error) { toast.error("Failed to load event details"); }
+  const handlePause = async (id: string) => {
+    if (window.confirm("Pause this event? This will change status to cancelled/suspended.")) {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.put(`${API_BASE_URL}/admin/event/${id}/suspend`, {}, { headers: { Authorization: `Bearer ${token}` }});
+        toast.success("Event paused");
+        fetchEvents();
+      } catch (error) { toast.error("Failed to pause event"); }
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -247,28 +199,16 @@ const Events: React.FC = () => {
           <Table>
             <thead>
               <tr>
-                <th>Banner</th>
                 <th>Event Name</th>
-                <th>Category</th>
                 <th>Organizer Name</th>
-                <th>Club/Company</th>
-                <th>Org Email</th>
-                <th>Org Phone</th>
-                <th>Instagram</th>
-                <th>Cafe Name</th>
-                <th>Venue</th>
-                <th>Address</th>
-                <th>City</th>
-                <th>State</th>
-                <th>Country</th>
                 <th>Date</th>
-                <th>Time</th>
-                <th>Ticket Price</th>
-                <th>Total Seats</th>
-                <th>Available</th>
-                <th>Sold</th>
-                <th>Revenue</th>
                 <th>Status</th>
+                <th>Capacity</th>
+                <th>Tickets Sold</th>
+                <th>Remaining</th>
+                <th>Revenue</th>
+                <th>Registrations</th>
+                <th>Check-ins</th>
                 <th>Created Date</th>
                 <th style={{ position: 'sticky', right: 0, background: theme.colors.gray100 }}>Actions</th>
               </tr>
@@ -278,33 +218,30 @@ const Events: React.FC = () => {
                 const revenue = (e.ticketsSold || 0) * (e.ticketPrice || 0);
                 return (
                   <tr key={e._id}>
-                    <td><img src={e.bannerUrl} alt="banner" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '4px' }} /></td>
                     <td style={{ fontWeight: '600' }}>{e.eventName}</td>
-                    <td>{e.eventCategory}</td>
                     <td>{e.organizerName}</td>
-                    <td>{e.clubCompanyName || 'N/A'}</td>
-                    <td>{e.organizerEmail}</td>
-                    <td>{e.phoneNumber}</td>
-                    <td>{e.eventInstagramId || 'N/A'}</td>
-                    <td>{e.cafeName}</td>
-                    <td>{e.venueName}</td>
-                    <td>{e.address}</td>
-                    <td>{e.city}</td>
-                    <td>{e.state}</td>
-                    <td>{e.country}</td>
                     <td>{new Date(e.eventDate).toLocaleDateString()}</td>
-                    <td>{e.startTime} - {e.endTime}</td>
-                    <td>₹{e.ticketPrice}</td>
+                    <td style={{ textTransform: 'uppercase', fontWeight: 600 }}>
+                      <span style={{ 
+                        background: e.status === 'published' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(241, 196, 15, 0.1)',
+                        color: e.status === 'published' ? theme.colors.success : theme.colors.warning,
+                        padding: '4px 8px', borderRadius: '4px', fontSize: '12px'
+                      }}>
+                        {e.status}
+                      </span>
+                    </td>
                     <td>{e.maxSeats}</td>
-                    <td>{e.availableSeats}</td>
                     <td>{e.ticketsSold || 0}</td>
+                    <td>{(e.maxSeats || 0) - (e.ticketsSold || 0)}</td>
                     <td style={{ color: theme.colors.success, fontWeight: 'bold' }}>₹{revenue.toLocaleString()}</td>
-                    <td style={{ textTransform: 'uppercase', fontWeight: 600 }}>{e.status}</td>
+                    <td>{e.registrationCount || 0}</td>
+                    <td>{e.checkInsCount || 0}</td>
                     <td>{new Date(e.createdAt).toLocaleDateString()}</td>
                     <td style={{ position: 'sticky', right: 0, background: 'white' }}>
                       <Actions>
-                        <button className="btn-view" onClick={() => openDrawer(e._id)}>View</button>
+                        <button className="btn-view" onClick={() => navigate(`/admin/event/${e._id}`)}>View Details</button>
                         <button className="btn-edit" onClick={() => { setEditEventId(e._id); setNewStatus(e.status); setEditModalOpen(true); }}>Edit</button>
+                        <button className="btn-edit" style={{ background: theme.colors.warning }} onClick={() => handlePause(e._id)}>Pause</button>
                         <button className="btn-delete" onClick={() => handleDelete(e._id)}>Delete</button>
                       </Actions>
                     </td>
@@ -316,75 +253,7 @@ const Events: React.FC = () => {
         </TableWrapper>
       </TableCard>
 
-      {/* DRAWER */}
-      {selectedEventId && (
-        <DrawerOverlay onClick={() => setSelectedEventId(null)}>
-          <Drawer onClick={e => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setSelectedEventId(null)}>&times;</button>
-            
-            {drawerData ? (
-              <>
-                <h2>{drawerData.event.eventName}</h2>
-                <img src={drawerData.event.bannerUrl} alt="banner" style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '12px', marginBottom: '16px' }} />
-                
-                <h3>Basic Info</h3>
-                <p><span className="label">Category:</span> {drawerData.event.eventCategory}</p>
-                <p><span className="label">Description:</span> {drawerData.event.eventDescription}</p>
 
-                <h3>Location</h3>
-                <p><span className="label">Cafe Name:</span> {drawerData.event.cafeName}</p>
-                <p><span className="label">Venue:</span> {drawerData.event.venueName}</p>
-                <p><span className="label">Address:</span> {drawerData.event.address}, {drawerData.event.city}, {drawerData.event.state}, {drawerData.event.country} - {drawerData.event.pincode}</p>
-                {drawerData.event.googleMapsLink && <p><span className="label">Maps:</span> <a href={drawerData.event.googleMapsLink} target="_blank" rel="noreferrer" style={{ color: theme.colors.gold }}>Open Link</a></p>}
-
-                <h3>Date & Time</h3>
-                <p><span className="label">Date:</span> {new Date(drawerData.event.eventDate).toLocaleDateString()}</p>
-                <p><span className="label">Time:</span> {drawerData.event.startTime} to {drawerData.event.endTime} ({drawerData.event.timezone})</p>
-
-                <h3>Tickets</h3>
-                <p><span className="label">Price:</span> ₹{drawerData.event.ticketPrice}</p>
-                <p><span className="label">Seats:</span> {drawerData.event.ticketsSold} Sold / {drawerData.event.maxSeats} Total</p>
-                <p><span className="label">Remaining:</span> {drawerData.event.maxSeats - drawerData.event.ticketsSold}</p>
-
-                <h3>Hosted By</h3>
-                <p><span className="label">Name:</span> {drawerData.event.organizerName}</p>
-                <p><span className="label">Club/Company:</span> {drawerData.event.clubCompanyName || 'N/A'}</p>
-                <p><span className="label">Instagram:</span> {drawerData.event.eventInstagramId || 'N/A'}</p>
-                <p><span className="label">Email:</span> {drawerData.event.organizerEmail}</p>
-                <p><span className="label">Phone:</span> {drawerData.event.phoneNumber}</p>
-
-                <h3>Settlement Details</h3>
-                {(drawerData.event.upiId || drawerData.bankDetails?.upiId || drawerData.event.accountHolderName || drawerData.bankDetails?.accountHolderName || drawerData.event.bankName || drawerData.bankDetails?.bankName) ? (
-                  <>
-                    {(drawerData.event.upiId || drawerData.bankDetails?.upiId) && (
-                      <p><span className="label">UPI ID:</span> {drawerData.event.upiId || drawerData.bankDetails?.upiId}</p>
-                    )}
-                    {(drawerData.event.accountHolderName || drawerData.bankDetails?.accountHolderName) && (
-                      <p><span className="label">Account Holder Name:</span> {drawerData.event.accountHolderName || drawerData.bankDetails?.accountHolderName || 'N/A'}</p>
-                    )}
-                    {(drawerData.event.bankName || drawerData.bankDetails?.bankName) && (
-                      <p><span className="label">Bank Name:</span> {drawerData.event.bankName || drawerData.bankDetails?.bankName || 'N/A'}</p>
-                    )}
-                    {(drawerData.event.accountNumber || drawerData.bankDetails?.accountNumber) && (
-                      <p><span className="label">Account Number:</span> {drawerData.event.accountNumber || drawerData.bankDetails?.accountNumber || 'N/A'}</p>
-                    )}
-                    {(drawerData.event.ifscCode || drawerData.bankDetails?.ifscCode) && (
-                      <p><span className="label">IFSC Code:</span> {drawerData.event.ifscCode || drawerData.bankDetails?.ifscCode || 'N/A'}</p>
-                    )}
-                    {(drawerData.event.paymentMobileNumber || drawerData.bankDetails?.paymentMobileNumber) && (
-                      <p><span className="label">Payment Mobile Number:</span> {drawerData.event.paymentMobileNumber || drawerData.bankDetails?.paymentMobileNumber || 'N/A'}</p>
-                    )}
-                  </>
-                ) : (
-                  <p><span className="label">Bank Info:</span> Not provided or Invalid</p>
-                )}
-              </>
-            ) : (
-              <p>Loading details...</p>
-            )}
-          </Drawer>
-        </DrawerOverlay>
-      )}
 
       {/* EDIT MODAL */}
       {editModalOpen && (
