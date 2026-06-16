@@ -82,8 +82,16 @@ const EventDetails: React.FC = () => {
   if (!data || !data.event) return <div>Event not found</div>;
 
   const { event, organizer, registrations, analytics } = data;
-  const revenue = registrations.reduce((sum: number, r: any) => sum + (r.amountPaid || 0), 0);
-  const ticketsSold = registrations.reduce((sum: number, r: any) => sum + (r.ticketCount || 1), 0);
+  
+  const actualTicketsSold = registrations.length > 0 
+    ? registrations.reduce((sum: number, r: any) => sum + (r.ticketCount || 1), 0)
+    : (event.ticketsSold || 0);
+
+  const revenue = registrations.length > 0
+    ? registrations.reduce((sum: number, r: any) => sum + (r.amountPaid || 0), 0)
+    : (actualTicketsSold * (event.ticketPrice || 0));
+
+  const totalRegistrations = registrations.length > 0 ? registrations.length : actualTicketsSold;
   
   const today = new Date();
   today.setHours(0,0,0,0);
@@ -92,7 +100,7 @@ const EventDetails: React.FC = () => {
     return sum;
   }, 0);
 
-  const conversionRate = event.maxSeats > 0 ? ((ticketsSold / event.maxSeats) * 100).toFixed(1) : 0;
+  const conversionRate = event.maxSeats > 0 ? ((actualTicketsSold / event.maxSeats) * 100).toFixed(1) : 0;
 
   return (
     <Container>
@@ -114,6 +122,8 @@ const EventDetails: React.FC = () => {
           <div><Label>Ticket Price</Label><Value>₹{event.ticketPrice}</Value></div>
           <div><Label>Capacity</Label><Value>{event.maxSeats} Seats</Value></div>
           <div><Label>Status</Label><Value style={{ textTransform: 'uppercase', color: theme.colors.success, fontWeight: 'bold' }}>{event.status}</Value></div>
+          <div><Label>Organizer Mobile</Label><Value>{organizer?.Phonenumber || 'N/A'}</Value></div>
+          <div><Label>Organizer UPI ID</Label><Value>{organizer?.upiId || 'N/A'}</Value></div>
         </Grid>
       </Section>
 
@@ -122,8 +132,8 @@ const EventDetails: React.FC = () => {
         <Grid>
           <div><Label>Total Revenue</Label><Value style={{ color: theme.colors.success, fontSize: '24px', fontWeight: 'bold' }}>₹{revenue.toLocaleString()}</Value></div>
           <div><Label>Revenue Today</Label><Value style={{ color: theme.colors.gold, fontSize: '24px', fontWeight: 'bold' }}>₹{revenueToday.toLocaleString()}</Value></div>
-          <div><Label>Tickets Sold</Label><Value>{ticketsSold}</Value></div>
-          <div><Label>Remaining Tickets</Label><Value>{(event.maxSeats || 0) - ticketsSold}</Value></div>
+          <div><Label>Tickets Sold</Label><Value>{actualTicketsSold}</Value></div>
+          <div><Label>Remaining Tickets</Label><Value>{Math.max(0, (event.maxSeats || 0) - actualTicketsSold)}</Value></div>
           <div><Label>Seat Fill Rate</Label><Value>{conversionRate}%</Value></div>
         </Grid>
       </Section>
@@ -131,7 +141,7 @@ const EventDetails: React.FC = () => {
       <Section>
         <Title>Registration Analytics</Title>
         <Grid>
-          <div><Label>Total Registrations</Label><Value>{registrations.length}</Value></div>
+          <div><Label>Total Registrations</Label><Value>{totalRegistrations}</Value></div>
           <div><Label>New Registrations Today</Label><Value>{analytics?.newRegistrationsToday || 0}</Value></div>
           <div><Label>Male</Label><Value>{analytics?.maleCount || 0}</Value></div>
           <div><Label>Female</Label><Value>{analytics?.femaleCount || 0}</Value></div>
@@ -144,7 +154,7 @@ const EventDetails: React.FC = () => {
         <div style={{ display: 'flex', gap: '32px', marginBottom: '24px' }}>
           <div style={{ background: theme.colors.coffeeDark, color: 'white', padding: '16px', borderRadius: '12px', flex: 1 }}>
             <div style={{ fontSize: '13px', opacity: 0.8, textTransform: 'uppercase', marginBottom: '8px' }}>Live Tickets Sold</div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: theme.colors.gold }}>{ticketsSold}</div>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: theme.colors.gold }}>{actualTicketsSold}</div>
           </div>
           <div style={{ background: theme.colors.coffeeDark, color: 'white', padding: '16px', borderRadius: '12px', flex: 1 }}>
             <div style={{ fontSize: '13px', opacity: 0.8, textTransform: 'uppercase', marginBottom: '8px' }}>Live Revenue</div>

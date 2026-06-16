@@ -294,15 +294,22 @@ const getSettlements = async (req, res) => {
       let totalRevenue = 0;
       let ticketsSold = 0;
 
-      regs.forEach(r => {
-        ticketsSold += (r.ticketCount || 1);
-        if (r.amountPaid > 0) {
-          paidUsers += 1;
-          totalRevenue += r.amountPaid;
-        } else {
-          freeUsers += 1;
-        }
-      });
+      if (regs.length > 0) {
+        regs.forEach(r => {
+          ticketsSold += (r.ticketCount || 1);
+          if (r.amountPaid > 0) {
+            paidUsers += 1;
+            totalRevenue += r.amountPaid;
+          } else {
+            freeUsers += 1;
+          }
+        });
+      } else if (e.ticketsSold > 0) {
+        ticketsSold = e.ticketsSold;
+        totalRevenue = ticketsSold * (e.ticketPrice || 0);
+        if (e.ticketPrice > 0) paidUsers = ticketsSold;
+        else freeUsers = ticketsSold;
+      }
 
       if (ticketsSold > 0) {
         const platformFeeAmount = totalRevenue * 0.05; // 5% fee
